@@ -1,195 +1,2951 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Services</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OrangeGlass POS & Shop Manager</title>
+  
+  <!-- Programmatic Silence for Tailwind CSS Production Warning -->
+  <script>
+    (function() {
+      const originalWarn = console.warn;
+      console.warn = function(...args) {
+        if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) {
+          return; // Ignore the Tailwind development-only warning
         }
+        originalWarn.apply(console, args);
+      };
+    })();
+  </script>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0b0f19;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts (Inter & JetBrains Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-        .container {
-            text-align: center;
-            padding: 2rem;
-            max-width: 600px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel for JSX Compilation -->
+  <script src="https://unpkg.com/@babel/standalone@7.23.12/babel.min.js"></script>
 
-        /* AR Logo Styling */
-        .logo-container {
-            margin-bottom: 2rem;
-        }
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 10% 20%, rgba(251, 146, 60, 0.12) 0%, rgba(0, 0, 0, 0) 80%),
+                  linear-gradient(135deg, #120f0e 0%, #070505 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #f3f4f6;
+      overflow-x: hidden;
+    }
 
-        .ar-logo {
-            width: 100px;
-            height: 100px;
-            /* Gradient fallback background */
-            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-            border-radius: 20px;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2.2rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            box-shadow: 0 0 25px rgba(79, 172, 254, 0.3);
-            animation: float 4s ease-in-out infinite;
-        }
+    /* Premium Glassmorphic Classes */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(24px) saturate(140%);
+      -webkit-backdrop-filter: blur(24px) saturate(140%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+    }
 
-        .ar-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 20px;
-        }
+    .glass-panel-orange {
+      background: rgba(251, 146, 60, 0.08);
+      backdrop-filter: blur(24px) saturate(150%);
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+      box-shadow: 0 8px 32px 0 rgba(251, 146, 60, 0.1);
+    }
 
-        /* Typography */
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            letter-spacing: 1px;
-            background: linear-gradient(to right, #ffffff, #a5b4fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+    .glass-input {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-        p {
-            font-size: 1.1rem;
-            color: #94a3b8;
-            margin-bottom: 3rem;
-        }
+    .glass-input:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(251, 146, 60, 0.5);
+      outline: none;
+      box-shadow: 0 0 15px rgba(251, 146, 60, 0.15);
+    }
 
-        /* --- Nice Circular Loader Design --- */
-        .circle-loader-box {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    /* Legible Option Dropdowns (Fixes White Text Blank dropdown bug) */
+    select option {
+      background-color: #18181b !important;
+      color: #ffffff !important;
+    }
 
-        .circle-loader-box svg {
-            width: 100%;
-            height: 100%;
-            transform: rotate(-90deg); /* Rotates starting point to the top */
-        }
+    /* Custom Hide Scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
-        /* The grey background track */
-        .circle-bg {
-            fill: none;
-            stroke: rgba(255, 255, 255, 0.05);
-            stroke-width: 12px;
-        }
+    /* Bill Watermark Stamping styles */
+    .watermark-rejected {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-25deg);
+      font-size: 4rem;
+      font-weight: 900;
+      color: rgba(239, 68, 68, 0.15);
+      border: 6px double rgba(239, 68, 68, 0.15);
+      padding: 10px 30px;
+      text-transform: uppercase;
+      pointer-events: none;
+      letter-spacing: 0.25rem;
+      border-radius: 12px;
+      z-index: 10;
+    }
 
-        /* The glowing neon loading arc */
-        .circle-progress {
-            fill: none;
-            stroke: url(#cyan-gradient);
-            stroke-width: 12px;
-            stroke-linecap: round;
-            /* 2 * PI * Radius (r=85) = ~534 */
-            stroke-dasharray: 534;
-            stroke-dashoffset: 534;
-            animation: spinCircle 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-            filter: drop-shadow(0px 0px 8px rgba(0, 242, 254, 0.8));
-        }
+    @keyframes scale-up {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-scale-up {
+      animation: scale-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
 
-        /* Percentage text inside the circle */
-        .loading-text {
-            position: absolute;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #00f2fe;
-            font-family: monospace;
-            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
-        }
-
-        /* Animations */
-        @keyframes spinCircle {
-            0% {
-                stroke-dashoffset: 534;
-            }
-            50% {
-                stroke-dashoffset: 130; /* Fills up to roughly 75% */
-            }
-            100% {
-                stroke-dashoffset: 0; /* Completes loop */
-            }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-    </style>
+    /* Printer settings overrides */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        color: #000000 !important;
+        background: #ffffff !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Logo Section -->
-        <div class="logo-container">
-            <div class="ar-logo">
-                <!-- Replace 'your-logo-url.png' with your actual image path -->
-                <img src="your-logo-url.png" alt="AR" onerror="this.style.display='none'">
-                AR
-            </div>
-        </div>
+  <!-- Background Orbs -->
+  <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-orange-600/10 blur-[120px] pointer-events-none z-0"></div>
+  <div class="fixed bottom-[-10%] right-[-10%] w-[55vw] h-[55vw] rounded-full bg-white/5 blur-[150px] pointer-events-none z-0"></div>
 
-        <!-- Heading Text -->
-        <h1>Stay Tuned</h1>
-        <p>Our server will be soon.</p>
+  <!-- Root Div Container -->
+  <div id="root" class="relative z-10 min-h-screen flex flex-col"></div>
 
-        <!-- Nice Round Circle Loader -->
-        <div class="circle-loader-box">
-            <svg>
-                <defs>
-                    <!-- Gradient for the loading stroke -->
-                    <linearGradient id="cyan-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#00f2fe" />
-                        <stop offset="100%" stop-color="#4facfe" />
-                    </linearGradient>
-                </defs>
-                <!-- Background Ring -->
-                <circle class="circle-bg" cx="100" cy="100" r="85"></circle>
-                <!-- Animated Progress Ring -->
-                <circle class="circle-progress" cx="100" cy="100" r="85"></circle>
-            </svg>
-            <!-- Center Text -->
-            <div class="loading-text" id="percentage">0%</div>
-        </div>
-    </div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
 
-    <!-- Simple JavaScript to make the percentage numbers count up dynamically with the circle -->
-    <script>
-        const percentText = document.getElementById('percentage');
-        let count = 0;
-        
-        setInterval(() => {
-            count++;
-            if (count > 100) {
-                count = 0; // Reset loop matching the CSS animation
+    const Icon = ({ name, className = "w-5 h-5", strokeWidth = 2 }) => {
+      const icons = {
+        shoppingCart: <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />,
+        barChart: <path d="M3 3v18h18M18 17V9M12 17V5M6 17v-4" />,
+        package: <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" />,
+        fileText: <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8" />,
+        settings: <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />,
+        wallet: <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 10h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z M16 16h2" />,
+        folder: <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z" />,
+        plus: <path d="M12 5v14M5 12h14" />,
+        trash: <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" />,
+        check: <path d="M20 6 9 17l-5-5" />,
+        x: <path d="M18 6 6 18M6 6l12 12" />,
+        printer: <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z" />,
+        phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />,
+        user: <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
+        shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+        menu: <path d="M4 12h16M4 6h16M4 18h16" />,
+        info: <g><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" /></g>,
+        lock: <g><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></g>,
+        search: <g><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></g>,
+        upload: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />,
+        truck: <g><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></g>,
+        star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      };
+
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={className}
+        >
+          {icons[name] || <circle cx="12" cy="12" r="10" />}
+        </svg>
+      );
+    };
+
+    const defaultProductsList = [
+      { id: "1", name: "Red Onion Premium", category: "Vegetables", baseUnit: "kg", basePrice: 60, hasSubUnit: true, subUnitName: "gram", subUnitFactor: 1000, stock: 120, minStock: 15, imageUrl: "https://images.unsplash.com/photo-1618213837799-25d5552420ab?w=120&auto=format&fit=crop" },
+      { id: "2", name: "Fresh Potatoes", category: "Vegetables", baseUnit: "kg", basePrice: 40, hasSubUnit: true, subUnitName: "gram", subUnitFactor: 1000, stock: 250, minStock: 20, imageUrl: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=120&auto=format&fit=crop" },
+      { id: "3", name: "Mustard Oil Pure", category: "Grocery", baseUnit: "Liter", basePrice: 180, hasSubUnit: true, subUnitName: "ml", subUnitFactor: 1000, stock: 45, minStock: 8, imageUrl: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=120&auto=format&fit=crop" }
+    ];
+
+    const defaultShopConfigObj = {
+      name: "Abinash Rizal Shop",
+      logo: "", 
+      tagline: "Quality Groceries & POS Solutions",
+      address: "12, Commercial Block, Sector-62, Noida, UP, India",
+      phone: "+91 98765 43210",
+      gstin: "09AAAAA1111A1Z1",
+      upiIds: ["9242021022@fam", "9242021022@okaxis"],
+      activeUpiId: "9242021022@fam",
+      customCategories: ["Vegetables", "Grocery", "Dairy", "Beverages", "Spices", "Others"]
+    };
+
+    function App() {
+      const [dirHandle, setDirHandle] = useState(null);
+      const [isSynced, setIsSynced] = useState(false);
+      const [syncLoading, setSyncLoading] = useState(false);
+      const [syncStepText, setSyncStepText] = useState("");
+      const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+
+      const [products, setProducts] = useState([]);
+      const [sales, setSales] = useState([]);
+      const [shopConfig, setShopConfig] = useState(defaultShopConfigObj);
+      const [purchases, setPurchases] = useState([]);
+      const [passbooks, setPassbooks] = useState([]);
+      const [loans, setLoans] = useState([]);
+
+      const [customDialog, setCustomDialog] = useState(null); 
+
+      const [currentTab, setCurrentTab] = useState("pos"); 
+      const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+      const [toast, setToast] = useState(null);
+
+      const [weightEntry, setWeightEntry] = useState("1"); 
+      const [weightUnit, setWeightUnit] = useState("gram"); 
+      const [manualTotalOverride, setManualTotalOverride] = useState(""); 
+      const [manualTaxToggle, setManualTaxToggle] = useState(true); 
+
+      const [cart, setCart] = useState([]);
+      const [customerName, setCustomerName] = useState("");
+      const [customerPhone, setCustomerPhone] = useState("");
+      const [paymentMode, setPaymentMode] = useState("Cash"); 
+      const [passbookCheckoutUid, setPassbookCheckoutUid] = useState("");
+
+      const [activeReceipt, setActiveReceipt] = useState(null);
+      const [receiptLayout, setReceiptLayout] = useState("A4"); 
+      const [editingProduct, setEditingProduct] = useState(null);
+      const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+
+      const [servicesTab, setServicesTab] = useState("passbook"); 
+      const [selectedPassbookUid, setSelectedPassbookUid] = useState("");
+      const [fetchedPassbook, setFetchedPassbook] = useState(null);
+      const [passbookActionType, setPassbookActionType] = useState("deposit"); 
+      const [passbookActionAmount, setPassbookActionAmount] = useState("");
+      const [passbookActionPassword, setPassbookActionPassword] = useState("");
+
+      const [newPassbook, setNewPassbook] = useState({
+        name: "", address: "", phone: "", openingBal: "", password: "", expiryDate: ""
+      });
+
+      const [newLoan, setNewLoan] = useState({
+        customerName: "", phone: "", principal: "", rate: "", period: "", payMode: "Cash", passbookUid: ""
+      });
+      const [loanRepayId, setLoanRepayId] = useState("");
+      const [loanRepayAmount, setLoanRepayAmount] = useState("");
+      const [loanRepayMode, setLoanRepayMode] = useState("Cash");
+
+      const [newCategoryInput, setNewCategoryInput] = useState("");
+
+      const [newPurchase, setNewPurchase] = useState({
+        partyName: "", itemId: "", qty: "", unitName: "", costPrice: "", paymentStatus: "Fully Paid", paidAmount: ""
+      });
+
+      const [cornerAnimation, setCornerAnimation] = useState(null); 
+
+      const [posSearch, setPosSearch] = useState("");
+      const [posCategory, setPosCategory] = useState("All");
+
+      const triggerCustomAlert = (title, message) => {
+        return new Promise((resolve) => {
+          setCustomDialog({
+            type: 'alert',
+            title,
+            message,
+            onResolve: () => {
+              setCustomDialog(null);
+              resolve();
             }
-            percentText.innerText = count + "%";
-        }, 38); // Timed to closely match the 4-second CSS cycle
-    </script>
+          });
+        });
+      };
 
+      const triggerCustomConfirm = (title, message) => {
+        return new Promise((resolve) => {
+          setCustomDialog({
+            type: 'confirm',
+            title,
+            message,
+            onResolve: () => {
+              setCustomDialog(null);
+              resolve(true);
+            },
+            onReject: () => {
+              setCustomDialog(null);
+              resolve(false);
+            }
+          });
+        });
+      };
+
+      const triggerCustomPrompt = (title, message, placeholder = "", defaultValue = "") => {
+        return new Promise((resolve) => {
+          setCustomDialog({
+            type: 'prompt',
+            title,
+            message,
+            placeholder,
+            defaultValue,
+            onResolve: (val) => {
+              setCustomDialog(null);
+              resolve(val);
+            },
+            onReject: () => {
+              setCustomDialog(null);
+              resolve(null);
+            }
+          });
+        });
+      };
+
+      useEffect(() => {
+        if (toast) {
+          const timer = setTimeout(() => setToast(null), 3500);
+          return () => clearTimeout(timer);
+        }
+      }, [toast]);
+
+      const triggerToast = (message, type = "success") => {
+        setToast({ message, type });
+      };
+
+      const runCornerSplash = (title, amount, type) => {
+        setCornerAnimation({ title, amount, type });
+        setTimeout(() => setCornerAnimation(null), 4500);
+      };
+
+      useEffect(() => {
+        const attemptRestore = async () => {
+          try {
+            const db = await openIDB();
+            const savedHandle = await getIDBVal(db, "dirHandle");
+            if (savedHandle) {
+              setDirHandle(savedHandle);
+              setShowPermissionPrompt(true);
+            }
+          } catch (e) {
+            console.error("Failed restoring directory handle", e);
+          }
+        };
+        attemptRestore();
+      }, []);
+
+      const openIDB = () => {
+        return new Promise((resolve, reject) => {
+          try {
+            if (!window.indexedDB) {
+              reject(new Error("IndexedDB is not supported"));
+              return;
+            }
+            const request = indexedDB.open("OrangeGlassPOS_DB_V2", 1);
+            request.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              db.createObjectStore("handles");
+            };
+            request.onsuccess = (e) => resolve(e.target.result);
+            request.onerror = (e) => reject(e.target.error);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      };
+
+      const setIDBVal = async (db, key, val) => {
+        const tx = db.transaction("handles", "readwrite");
+        tx.objectStore("handles").put(val, key);
+        return tx.complete;
+      };
+
+      const getIDBVal = async (db, key) => {
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("handles", "readonly");
+          const request = tx.objectStore("handles").get(key);
+          request.onsuccess = (e) => resolve(e.target.result);
+          request.onerror = (e) => reject(e.target.error);
+        });
+      };
+
+      const removeIDBVal = async (db, key) => {
+        const tx = db.transaction("handles", "readwrite");
+        tx.objectStore("handles").delete(key);
+        return tx.complete;
+      };
+
+      const readFile = async (dirHandle, fileName, fallbackData) => {
+        try {
+          const fileHandle = await dirHandle.getFileHandle(fileName);
+          const file = await fileHandle.getFile();
+          const content = await file.text();
+          return JSON.parse(content);
+        } catch (error) {
+          if (error.name === "NotFoundError") {
+            await writeFile(dirHandle, fileName, fallbackData);
+            return fallbackData;
+          }
+          throw error;
+        }
+      };
+
+      const writeFile = async (dirHandle, fileName, data) => {
+        try {
+          const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(JSON.stringify(data, null, 2));
+          await writable.close();
+        } catch (error) {
+          console.error("Error writing database file to system", error);
+        }
+      };
+
+      const handleSelectFolder = async () => {
+        try {
+          const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+          setDirHandle(handle);
+          try {
+            const db = await openIDB();
+            await setIDBVal(db, "dirHandle", handle);
+          } catch (err) {
+            console.warn("IndexDB failure", err);
+          }
+          await loadDataFromFolder(handle);
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            triggerToast("Folder loading aborted/failed", "error");
+          }
+        }
+      };
+
+      const loadDataFromFolder = async (handle) => {
+        setSyncLoading(true);
+        setIsSynced(false);
+        const wait = (ms) => new Promise(res => setTimeout(res, ms));
+
+        try {
+          setSyncStepText("Connecting to local storage folder...");
+          await wait(500);
+
+          const status = await handle.queryPermission({ mode: 'readwrite' });
+          if (status !== 'granted') {
+            const reqStatus = await handle.requestPermission({ mode: 'readwrite' });
+            if (reqStatus !== 'granted') {
+              throw new Error("Folder read/write consent rejected.");
+            }
+          }
+          setSyncStepText("Permissions approved. Accessing database parameters...");
+          await wait(400);
+
+          setSyncStepText("Accessing shop_config.json...");
+          const conf = await readFile(handle, "shop_config.json", defaultShopConfigObj);
+          setShopConfig(conf);
+
+          setSyncStepText("Accessing shop_products.json...");
+          const prods = await readFile(handle, "shop_products.json", defaultProductsList);
+          setProducts(prods);
+
+          setSyncStepText("Accessing shop_sales.json...");
+          const sls = await readFile(handle, "shop_sales.json", []);
+          setSales(sls);
+
+          setSyncStepText("Accessing shop_purchases.json...");
+          const pur = await readFile(handle, "shop_purchases.json", []);
+          setPurchases(pur);
+
+          setSyncStepText("Accessing shop_passbooks.json...");
+          const pb = await readFile(handle, "shop_passbooks.json", []);
+          setPassbooks(pb);
+
+          setSyncStepText("Accessing shop_loans.json...");
+          const ln = await readFile(handle, "shop_loans.json", []);
+          setLoans(ln);
+
+          setSyncStepText("Synchronizing data arrays into virtual server memory...");
+          await wait(500);
+
+          setIsSynced(true);
+          triggerToast("Sync Active! Local storage connected.", "success");
+        } catch (error) {
+          console.error(error);
+          triggerToast(error.message || "Database synchronization failed", "error");
+          setIsSynced(false);
+        } finally {
+          setSyncLoading(false);
+          setShowPermissionPrompt(false);
+        }
+      };
+
+      const disconnectFolder = async () => {
+        const db = await openIDB();
+        await removeIDBVal(db, "dirHandle");
+        setDirHandle(null);
+        setIsSynced(false);
+        setProducts([]);
+        setSales([]);
+        setPurchases([]);
+        setPassbooks([]);
+        setLoans([]);
+        setShopConfig(defaultShopConfigObj);
+        triggerToast("Database unmounted. Files locked safely.", "warning");
+      };
+
+      const syncChanges = async (p, s, c, pur, pb, ln) => {
+        if (!dirHandle || !isSynced) return;
+        try {
+          if (p) await writeFile(dirHandle, "shop_products.json", p);
+          if (s) await writeFile(dirHandle, "shop_sales.json", s);
+          if (c) await writeFile(dirHandle, "shop_config.json", c);
+          if (pur) await writeFile(dirHandle, "shop_purchases.json", pur);
+          if (pb) await writeFile(dirHandle, "shop_passbooks.json", pb);
+          if (ln) await writeFile(dirHandle, "shop_loans.json", ln);
+        } catch (err) {
+          triggerToast("Failed writing updates. Ensure no program holds these files.", "error");
+        }
+      };
+
+      const handleLogoUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const MAX_WIDTH = 120;
+            const MAX_HEIGHT = 120;
+            canvas.width = MAX_WIDTH;
+            canvas.height = MAX_HEIGHT;
+            ctx.drawImage(img, 0, 0, MAX_WIDTH, MAX_HEIGHT);
+            
+            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+            setShopConfig(prev => ({ ...prev, logo: compressedBase64 }));
+            triggerToast("Logo uploaded and optimized successfully", "success");
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const calculateItemCost = (product, enteredValue, unitType, manualPriceInput) => {
+        if (manualPriceInput !== undefined && manualPriceInput !== "") {
+          return parseFloat(manualPriceInput) || 0;
+        }
+
+        const value = parseFloat(enteredValue) || 0;
+        if (unitType === product.baseUnit) {
+          return parseFloat((product.basePrice * value).toFixed(2));
+        } else if (product.hasSubUnit && unitType === product.subUnitName) {
+          const pricePerSub = product.basePrice / product.subUnitFactor;
+          return parseFloat((pricePerSub * value).toFixed(2));
+        }
+        return parseFloat((product.basePrice * value).toFixed(2));
+      };
+
+      const addItemToCart = (product) => {
+        const cost = calculateItemCost(product, weightEntry, weightUnit, manualTotalOverride);
+        const rateDetails = weightUnit === product.baseUnit 
+          ? `₹${product.basePrice}/${product.baseUnit}` 
+          : `₹${(product.basePrice / product.subUnitFactor).toFixed(3)}/${product.subUnitName}`;
+
+        const cartItem = {
+          product,
+          quantity: parseFloat(weightEntry) || 1,
+          selectedUnit: weightUnit,
+          rateDetails,
+          customPrice: manualTotalOverride ? parseFloat(manualTotalOverride) : null,
+          totalCost: cost
+        };
+
+        setCart([...cart, cartItem]);
+        setWeightEntry("1");
+        setManualTotalOverride("");
+        triggerToast(`${product.name} added to cart`, "success");
+      };
+
+      const removeFromCart = (index) => {
+        setCart(cart.filter((_, i) => i !== index));
+      };
+
+      const completeCheckout = async (checkoutStatus = "Success") => {
+        if (cart.length === 0) {
+          triggerToast("Cart is empty", "warning");
+          return;
+        }
+
+        const baseTotal = cart.reduce((sum, item) => sum + (item.totalCost || 0), 0);
+        const taxAmount = manualTaxToggle ? parseFloat((baseTotal * 0.05).toFixed(2)) : 0;
+        const grandTotal = baseTotal + taxAmount;
+
+        let updatedPassbooks = [...(passbooks || [])];
+        if (paymentMode === "Passbook" && checkoutStatus === "Success") {
+          if (!passbookCheckoutUid) {
+            triggerToast("Enter Passbook UID to complete check", "error");
+            return;
+          }
+          const pBook = updatedPassbooks.find(p => p.uid === passbookCheckoutUid);
+          if (!pBook) {
+            triggerToast("Passbook not found with this UID", "error");
+            return;
+          }
+          if (pBook.balance < grandTotal) {
+            triggerToast(`Insufficient Passbook Balance (Bal: ₹${pBook.balance})`, "error");
+            return;
+          }
+          pBook.balance = parseFloat((pBook.balance - grandTotal).toFixed(2));
+          pBook.statement = [
+            ...(pBook.statement || []),
+            { date: new Date().toLocaleString("en-IN"), type: "CHECKOUT DEBIT", amount: grandTotal, balance: pBook.balance }
+          ];
+          triggerToast(`Passbook debited. Remaining: ₹${pBook.balance}`, "success");
+        }
+
+        let updatedProducts = [...(products || [])];
+        if (checkoutStatus === "Success") {
+          updatedProducts = products.map(p => {
+            let totalDeducted = 0;
+            cart.forEach(item => {
+              if (item.product.id === p.id) {
+                if (item.selectedUnit === p.baseUnit) {
+                  totalDeducted += item.quantity;
+                } else if (p.hasSubUnit && item.selectedUnit === p.subUnitName) {
+                  totalDeducted += item.quantity / p.subUnitFactor;
+                }
+              }
+            });
+            return {
+              ...p,
+              stock: parseFloat(Math.max(0, p.stock - totalDeducted).toFixed(3))
+            };
+          });
+        }
+
+        const newInvoice = {
+          id: "TXN-" + Date.now().toString().slice(-8),
+          date: new Date().toLocaleString("en-IN"),
+          customerName: customerName || "General Customer",
+          customerPhone: customerPhone || "N/A",
+          items: cart.map(item => ({
+            name: item.product.name,
+            unit: item.selectedUnit,
+            quantity: item.quantity,
+            rate: item.rateDetails,
+            price: item.totalCost
+          })),
+          taxAmount,
+          totalAmount: grandTotal,
+          paymentMode: paymentMode,
+          status: checkoutStatus
+        };
+
+        const updatedSales = [newInvoice, ...(sales || [])];
+        setProducts(updatedProducts);
+        setSales(updatedSales);
+        setPassbooks(updatedPassbooks);
+
+        await syncChanges(updatedProducts, updatedSales, null, null, updatedPassbooks, null);
+        setActiveReceipt(newInvoice);
+
+        setCart([]);
+        setCustomerName("");
+        setCustomerPhone("");
+        setPassbookCheckoutUid("");
+
+        if (checkoutStatus === "Success") {
+          runCornerSplash("POS TRANSACTION COMPLETED", `₹${grandTotal.toFixed(2)}`, "Success");
+        } else {
+          runCornerSplash("TRANSACTION CANCELLED / REJECTED", `₹${grandTotal.toFixed(2)}`, "Cancelled");
+        }
+      };
+
+      const saveProductDetails = async (e) => {
+        e.preventDefault();
+        let updatedList;
+        if (editingProduct.id) {
+          updatedList = products.map(p => p.id === editingProduct.id ? editingProduct : p);
+          triggerToast("Product details updated", "success");
+        } else {
+          const newItem = { ...editingProduct, id: "PROD-" + Date.now().toString().slice(-6) };
+          updatedList = [...products, newItem];
+          triggerToast("New stock added successfully", "success");
+        }
+        setProducts(updatedList);
+        setIsProductModalOpen(false);
+        setEditingProduct(null);
+        await syncChanges(updatedList, null, null, null, null, null);
+      };
+
+      const deleteProductDetails = async (id) => {
+        const proceed = await triggerCustomConfirm("Delete Item?", "Are you sure you want to delete this product from your inventory files?");
+        if (proceed) {
+          const updated = products.filter(p => p.id !== id);
+          setProducts(updated);
+          triggerToast("Product removed", "warning");
+          await syncChanges(updated, null, null, null, null, null);
+        }
+      };
+
+      const executeInventoryRefill = async (e) => {
+        e.preventDefault();
+        if (!newPurchase.itemId || !newPurchase.qty || !newPurchase.costPrice) {
+          triggerToast("Please fill in refill parameters correctly", "warning");
+          return;
+        }
+
+        const selectedItem = products.find(p => p.id === newPurchase.itemId);
+        if (!selectedItem) return;
+
+        const refillQtyVal = parseFloat(newPurchase.qty);
+        const purchaseTotal = parseFloat(newPurchase.costPrice) * refillQtyVal;
+        const paidVal = newPurchase.paymentStatus === "Fully Paid" ? purchaseTotal : parseFloat(newPurchase.paidAmount || 0);
+        const dueVal = purchaseTotal - paidVal;
+
+        const updatedProducts = products.map(p => {
+          if (p.id === selectedItem.id) {
+            return {
+              ...p,
+              stock: parseFloat((p.stock + refillQtyVal).toFixed(3))
+            };
+          }
+          return p;
+        });
+
+        const purchaseRecord = {
+          id: "PUR-" + Date.now().toString().slice(-6),
+          date: new Date().toLocaleString("en-IN"),
+          partyName: newPurchase.partyName || "Unregistered Party",
+          itemName: selectedItem.name,
+          quantity: refillQtyVal,
+          unitName: newPurchase.unitName || selectedItem.baseUnit, 
+          totalCost: purchaseTotal,
+          paymentStatus: newPurchase.paymentStatus,
+          paidAmount: paidVal,
+          dueAmount: dueVal
+        };
+
+        const updatedPurchases = [purchaseRecord, ...(purchases || [])];
+        setProducts(updatedProducts);
+        setPurchases(updatedPurchases);
+
+        setNewPurchase({
+          partyName: "", itemId: "", qty: "", unitName: "", costPrice: "", paymentStatus: "Fully Paid", paidAmount: ""
+        });
+
+        await syncChanges(updatedProducts, null, null, updatedPurchases, null, null);
+        triggerToast("Stock refill log recorded and stock values added!", "success");
+      };
+
+      const createPassbookAccount = async (e) => {
+        e.preventDefault();
+        if (!newPassbook.name || !newPassbook.password) {
+          triggerToast("Passbook name and passwords are mandatory", "warning");
+          return;
+        }
+
+        const uid = "PB-" + Math.floor(100000 + Math.random() * 900000);
+        const passbookRecord = {
+          uid,
+          name: newPassbook.name,
+          address: newPassbook.address || "N/A",
+          phone: newPassbook.phone || "N/A",
+          balance: parseFloat(newPassbook.openingBal || 0),
+          password: newPassbook.password,
+          expiryDate: newPassbook.expiryDate || new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString(),
+          statement: [
+            { date: new Date().toLocaleString("en-IN"), type: "Opening", amount: parseFloat(newPassbook.openingBal || 0), balance: parseFloat(newPassbook.openingBal || 0) }
+          ]
+        };
+
+        const updatedPassbooks = [...(passbooks || []), passbookRecord];
+        setPassbooks(updatedPassbooks);
+        await syncChanges(null, null, null, null, updatedPassbooks, null);
+
+        setNewPassbook({ name: "", address: "", phone: "", openingBal: "", password: "", expiryDate: "" });
+        triggerCustomAlert("Account Created", `Passbook registered! User ID / Code: ${uid}`);
+      };
+
+      const handleFetchPassbook = () => {
+        const found = (passbooks || []).find(p => p.uid === selectedPassbookUid);
+        if (!found) {
+          triggerToast("No Passbook found with this UID", "error");
+          setFetchedPassbook(null);
+          return;
+        }
+        setFetchedPassbook(found);
+      };
+
+      const executePassbookAction = async () => {
+        if (!fetchedPassbook || !passbookActionAmount) return;
+        const amount = parseFloat(passbookActionAmount);
+
+        if (passbookActionType === "withdraw") {
+          if (fetchedPassbook.password !== passbookActionPassword) {
+            triggerToast("Incorrect Passbook PIN/Password", "error");
+            return;
+          }
+          if (fetchedPassbook.balance < amount) {
+            triggerToast("Insufficient passbook funds", "error");
+            return;
+          }
+        }
+
+        const updatedPassbooks = (passbooks || []).map(p => {
+          if (p.uid === fetchedPassbook.uid) {
+            const newBalance = passbookActionType === "deposit" 
+              ? parseFloat((p.balance + amount).toFixed(2))
+              : parseFloat((p.balance - amount).toFixed(2));
+            
+            return {
+              ...p,
+              balance: newBalance,
+              statement: [
+                ...(p.statement || []),
+                { date: new Date().toLocaleString("en-IN"), type: passbookActionType.toUpperCase(), amount, balance: newBalance }
+              ]
+            };
+          }
+          return p;
+        });
+
+        setPassbooks(updatedPassbooks);
+        await syncChanges(null, null, null, null, updatedPassbooks, null);
+        
+        setFetchedPassbook(updatedPassbooks.find(p => p.uid === fetchedPassbook.uid));
+        setPassbookActionAmount("");
+        setPassbookActionPassword("");
+        triggerToast("Passbook Ledger statement updated successfully", "success");
+      };
+
+      const executeLoanDisbursement = async (e) => {
+        e.preventDefault();
+        const principalVal = parseFloat(newLoan.principal);
+        const rateVal = parseFloat(newLoan.rate || 0);
+        const periodVal = parseFloat(newLoan.period || 1); 
+
+        if (!newLoan.customerName || !principalVal) {
+          triggerToast("Enter Customer Name and Principal amount", "warning");
+          return;
+        }
+
+        const calculatedInterest = parseFloat(((principalVal * rateVal * periodVal) / 1200).toFixed(2));
+        const totalPayable = principalVal + calculatedInterest;
+
+        let updatedPassbooks = [...(passbooks || [])];
+        if (newLoan.payMode === "Passbook") {
+          if (!newLoan.passbookUid) {
+            triggerToast("Enter Passbook UID to complete Loan integration", "error");
+            return;
+          }
+          const pBook = updatedPassbooks.find(p => p.uid === newLoan.passbookUid);
+          if (!pBook) {
+            triggerToast("Selected loan passbook is invalid", "error");
+            return;
+          }
+          pBook.balance = parseFloat((pBook.balance + principalVal).toFixed(2));
+          pBook.statement = [
+            ...(pBook.statement || []),
+            { date: new Date().toLocaleString("en-IN"), type: "LOAN CREDIT", amount: principalVal, balance: pBook.balance }
+          ];
+        }
+
+        const loanRecord = {
+          id: "LOAN-" + Date.now().toString().slice(-6),
+          date: new Date().toLocaleDateString("en-IN"),
+          customerName: newLoan.customerName,
+          phone: newLoan.phone || "N/A",
+          principal: principalVal,
+          rate: rateVal,
+          period: periodVal,
+          calculatedInterest,
+          totalPayable,
+          remainingAmount: totalPayable,
+          paymentMode: newLoan.payMode,
+          passbookUid: newLoan.passbookUid || "N/A",
+          status: "Active"
+        };
+
+        const updatedLoans = [loanRecord, ...(loans || [])];
+        setLoans(updatedLoans);
+        setPassbooks(updatedPassbooks);
+
+        await syncChanges(null, null, null, null, updatedPassbooks, updatedLoans);
+
+        setNewLoan({ customerName: "", phone: "", principal: "", rate: "", period: "", payMode: "Cash", passbookUid: "" });
+        triggerToast("Loan account active and funds recorded!", "success");
+      };
+
+      const handleLoanRepayment = async (e) => {
+        e.preventDefault();
+        const repayAmountVal = parseFloat(loanRepayAmount);
+        if (!loanRepayId || !repayAmountVal) {
+          triggerToast("Select Loan ID and Enter repay amount", "warning");
+          return;
+        }
+
+        let updatedPassbooks = [...(passbooks || [])];
+        const updatedLoans = (loans || []).map(l => {
+          if (l.id === loanRepayId) {
+            const newRemaining = parseFloat(Math.max(0, l.remainingAmount - repayAmountVal).toFixed(2));
+            
+            if (loanRepayMode === "Passbook" && l.passbookUid !== "N/A") {
+              const pBook = updatedPassbooks.find(p => p.uid === l.passbookUid);
+              if (pBook) {
+                pBook.balance = parseFloat((pBook.balance - repayAmountVal).toFixed(2));
+                pBook.statement = [
+                  ...(pBook.statement || []),
+                  { date: new Date().toLocaleString("en-IN"), type: "LOAN DEBIT (REPAY)", amount: repayAmountVal, balance: pBook.balance }
+                ];
+              }
+            }
+
+            return {
+              ...l,
+              remainingAmount: newRemaining,
+              status: newRemaining === 0 ? "Repaid" : "Active"
+            };
+          }
+          return l;
+        });
+
+        setLoans(updatedLoans);
+        setPassbooks(updatedPassbooks);
+        await syncChanges(null, null, null, null, updatedPassbooks, updatedLoans);
+
+        setLoanRepayAmount("");
+        triggerToast("Loan payment recorded on ledger", "success");
+      };
+
+      const handleAddCategory = async (e) => {
+        e.preventDefault();
+        if (!newCategoryInput.trim()) return;
+        const updatedCategories = [...shopConfig.customCategories, newCategoryInput.trim()];
+        const updatedConfig = { ...shopConfig, customCategories: updatedCategories };
+        setShopConfig(updatedConfig);
+        setNewCategoryInput("");
+        await syncChanges(null, null, updatedConfig, null, null, null);
+        triggerToast("Category added successfully", "success");
+      };
+
+      const handleDeleteCategory = async (catName) => {
+        const proceed = await triggerCustomConfirm("Delete Category?", `Remove "${catName}" category?`);
+        if (proceed) {
+          const updatedCategories = shopConfig.customCategories.filter(c => c !== catName);
+          const updatedConfig = { ...shopConfig, customCategories: updatedCategories };
+          setShopConfig(updatedConfig);
+          await syncChanges(null, null, updatedConfig, null, null, null);
+          triggerToast("Category deleted", "warning");
+        }
+      };
+
+      const filteredProducts = useMemo(() => {
+        return (products || []).filter(p => {
+          const searchLower = posSearch.toLowerCase();
+          const matchesSearch = p.name.toLowerCase().includes(searchLower) || p.category.toLowerCase().includes(searchLower);
+          const matchesCategory = posCategory === "All" || p.category === posCategory;
+          return matchesSearch && matchesCategory;
+        });
+      }, [products, posSearch, posCategory]);
+
+      const dashboardStats = useMemo(() => {
+        const netSales = (sales || []).filter(s => s.status === "Success").reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+        const activeLoansVal = (loans || []).filter(l => l.status === "Active").reduce((acc, l) => acc + (l.remainingAmount || 0), 0);
+        const totalRefillsValue = (purchases || []).reduce((acc, p) => acc + (p.totalCost || 0), 0);
+        return { netSales, activeLoansVal, totalRefillsValue };
+      }, [sales, loans, purchases]);
+
+      return (
+        <div className="flex flex-col min-h-screen">
+          
+          {/* Main Top Header Block */}
+          <header className="glass-panel sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-white/10">
+            <div className="flex items-center gap-3">
+              {shopConfig.logo ? (
+                <img src={shopConfig.logo} alt="Logo" className="w-12 h-12 rounded-full object-cover border border-orange-500 shadow-md shadow-orange-500/20" />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center font-extrabold text-xl text-white shadow-lg">
+                  {(shopConfig && shopConfig.name) ? shopConfig.name.charAt(0).toUpperCase() : "O"}
+                </div>
+              )}
+              <div>
+                <h1 className="text-xl font-extrabold bg-gradient-to-r from-orange-400 to-amber-200 bg-clip-text text-transparent flex items-center gap-2">
+                  {shopConfig.name || "OrangeGlass POS"}
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 font-medium">V2 Local Sync</span>
+                </h1>
+                <p className="text-xs text-gray-400 font-light tracking-wider">{shopConfig.tagline || "Quality Groceries & POS Solutions"}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {isSynced ? (
+                <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                  Local Files Connected
+                </span>
+              ) : (
+                <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                  Sandbox Cache Mode
+                </span>
+              )}
+              
+              <button 
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10"
+              >
+                <Icon name="menu" className="w-5 h-5 text-gray-300" />
+              </button>
+            </div>
+          </header>
+
+          <div className="flex-1 flex flex-col lg:flex-row">
+            
+            {/* Sidebar Navigation Panel Layout */}
+            <aside className={`glass-panel border-r border-white/10 p-4 flex flex-col gap-2 shrink-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
+              <p className={`text-xs font-semibold text-orange-400 tracking-wider uppercase px-3 py-2 ${sidebarCollapsed ? 'hidden lg:block lg:text-center' : ''}`}>
+                {sidebarCollapsed ? "..." : "POS Operations"}
+              </p>
+
+              <button 
+                onClick={() => isSynced ? setCurrentTab("pos") : triggerToast("Grant folder access to unlock POS panel!", "warning")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                  !isSynced ? 'opacity-40 cursor-not-allowed' :
+                  currentTab === "pos" ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'hover:bg-white/5 text-gray-300'
+                }`}
+              >
+                <Icon name="shoppingCart" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>POS Register</span>
+              </button>
+
+              <button 
+                onClick={() => isSynced ? setCurrentTab("dashboard") : triggerToast("Grant folder access to view sales trends!", "warning")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                  !isSynced ? 'opacity-40 cursor-not-allowed' :
+                  currentTab === "dashboard" ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'hover:bg-white/5 text-gray-300'
+                }`}
+              >
+                <Icon name="barChart" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Dashboard</span>
+              </button>
+
+              <button 
+                onClick={() => isSynced ? setCurrentTab("inventory") : triggerToast("Grant folder access to inspect stock!", "warning")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                  !isSynced ? 'opacity-40 cursor-not-allowed' :
+                  currentTab === "inventory" ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'hover:bg-white/5 text-gray-300'
+                }`}
+              >
+                <Icon name="package" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Inventory Manager</span>
+              </button>
+
+              <button 
+                onClick={() => isSynced ? setCurrentTab("purchases") : triggerToast("Grant folder access to log purchases!", "warning")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                  !isSynced ? 'opacity-40 cursor-not-allowed' :
+                  currentTab === "purchases" ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'hover:bg-white/5 text-gray-300'
+                }`}
+              >
+                <Icon name="truck" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Stock Refills</span>
+              </button>
+
+              <button 
+                onClick={() => isSynced ? setCurrentTab("services") : triggerToast("Grant folder access to open Bookkeeping Services!", "warning")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                  !isSynced ? 'opacity-40 cursor-not-allowed' :
+                  currentTab === "services" ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'hover:bg-white/5 text-gray-300'
+                }`}
+              >
+                <Icon name="wallet" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Services Book</span>
+              </button>
+
+              <button 
+                onClick={() => isSynced ? setCurrentTab("sales") : triggerToast("Grant folder access to view invoices!", "warning")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                  !isSynced ? 'opacity-40 cursor-not-allowed' :
+                  currentTab === "sales" ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'hover:bg-white/5 text-gray-300'
+                }`}
+              >
+                <Icon name="fileText" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Sales Log History</span>
+              </button>
+
+              <p className={`text-xs font-semibold text-orange-400 tracking-wider uppercase px-3 py-2 mt-4 ${sidebarCollapsed ? 'hidden lg:block lg:text-center' : ''}`}>
+                {sidebarCollapsed ? "..." : "Administrative"}
+              </p>
+
+              <button 
+                onClick={() => setCurrentTab("settings")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                  currentTab === "settings" ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'hover:bg-white/5 text-gray-300'
+                }`}
+              >
+                <Icon name="settings" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>System Settings</span>
+              </button>
+
+              {isSynced && !sidebarCollapsed && (
+                <div className="mt-auto p-3 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-center flex flex-col gap-2">
+                  <p className="text-[10px] text-gray-400 font-mono truncate">{dirHandle ? dirHandle.name : "N/A"}</p>
+                  <button 
+                    onClick={disconnectFolder}
+                    className="text-xs bg-red-500/20 hover:bg-red-500 text-red-200 py-1.5 px-3 rounded-lg border border-red-500/30 transition-all font-semibold"
+                  >
+                    Unmount Database
+                  </button>
+                </div>
+              )}
+            </aside>
+
+            {/* Main view panel portal */}
+            <main className="flex-1 p-6 overflow-y-auto no-scrollbar relative min-h-[500px]">
+
+              {/* STRICT PERMISSIONS OVERLAY PANEL (STOPS ACTIONS UNTIL UNLOCKED) */}
+              {!isSynced && !syncLoading && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#070505]/90 backdrop-blur-md p-6">
+                  <div className="max-w-md w-full glass-panel-orange p-8 rounded-3xl border border-orange-500/30 shadow-2xl text-center flex flex-col items-center gap-6 animate-scale-up">
+                    <div className="w-20 h-20 rounded-full bg-orange-500/15 flex items-center justify-center text-orange-400 border border-orange-500/30">
+                      <Icon name="lock" className="w-10 h-10 animate-pulse" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black text-white mb-2">Sync Local Directory</h2>
+                      <p className="text-sm text-gray-300 leading-relaxed">
+                        To load your products and process sales securely, please sync your local folder on your computer. Your transactions stay private.
+                      </p>
+                    </div>
+
+                    <button 
+                      onClick={handleSelectFolder}
+                      className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold py-4 px-6 rounded-2xl shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 flex items-center justify-center gap-3 border border-orange-400/20"
+                    >
+                      <Icon name="folder" />
+                      <span>Select Local Database Folder</span>
+                    </button>
+
+                    <p className="text-xs text-gray-500 font-mono italic">
+                      Reads/writes: shop_products.json, shop_sales.json, shop_config.json, shop_purchases.json, shop_passbooks.json
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* ACTIVE SYNCHRONIZATION LOADING SPLASH */}
+              {syncLoading && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#070505] backdrop-blur-xl">
+                  <div className="max-w-md w-full text-center flex flex-col items-center gap-6">
+                    <div className="relative w-28 h-28 flex items-center justify-center">
+                      <div className="absolute inset-0 rounded-full border-4 border-dashed border-orange-500 animate-spin"></div>
+                      <div className="w-20 h-20 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-400">
+                        <Icon name="refresh" className="w-10 h-10" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-white mb-1">Synchronizing Storage Drive</h3>
+                      <p className="text-xs text-orange-400 font-mono tracking-wider animate-pulse">{syncStepText}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONTAINER: DASHBOARD VIEW */}
+              {currentTab === "dashboard" && isSynced && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    <Icon name="barChart" className="text-orange-500 w-8 h-8" />
+                    Overview Analytics & Dashboard
+                  </h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="glass-panel p-6 rounded-2xl flex items-center gap-5">
+                      <div className="p-4 bg-orange-500/10 rounded-xl text-orange-400 border border-orange-500/20">
+                        <span className="text-2xl font-black">₹</span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Net Completed Sales</p>
+                        <h4 className="text-2xl font-extrabold text-white mt-1">₹{dashboardStats.netSales.toLocaleString("en-IN")}</h4>
+                      </div>
+                    </div>
+
+                    <div className="glass-panel p-6 rounded-2xl flex items-center gap-5">
+                      <div className="p-4 bg-orange-500/10 rounded-xl text-orange-400 border border-orange-500/20">
+                        <Icon name="star" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Active Loan Receivables</p>
+                        <h4 className="text-2xl font-extrabold text-white mt-1">₹{dashboardStats.activeLoansVal.toLocaleString("en-IN")}</h4>
+                      </div>
+                    </div>
+
+                    <div className="glass-panel p-6 rounded-2xl flex items-center gap-5">
+                      <div className="p-4 bg-orange-500/10 rounded-xl text-orange-400 border border-orange-500/20">
+                        <Icon name="truck" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Stock Purchases Outflow</p>
+                        <h4 className="text-2xl font-extrabold text-white mt-1">₹{dashboardStats.totalRefillsValue.toLocaleString("en-IN")}</h4>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Low Stock Indicators */}
+                  <div className="glass-panel p-6 rounded-3xl">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
+                      <Icon name="info" className="text-orange-500" />
+                      Critical Stock Alerts
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {(products || []).filter(p => p.stock <= p.minStock).length === 0 ? (
+                        <p className="text-sm text-gray-400 col-span-3 text-center py-6">All products are stocked sufficiently.</p>
+                      ) : (
+                        (products || []).filter(p => p.stock <= p.minStock).map(p => (
+                          <div key={p.id} className="p-4 bg-red-500/5 border border-red-500/20 rounded-xl flex justify-between items-center">
+                            <div>
+                              <p className="text-xs text-gray-400 uppercase font-bold">{p.category}</p>
+                              <h4 className="text-sm font-bold text-white mt-0.5">{p.name}</h4>
+                            </div>
+                            <span className="text-xs text-red-400 font-extrabold bg-red-500/10 px-2 py-1 rounded">
+                              {p.stock} {p.baseUnit} left
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONTAINER: POINT OF SALE TERMINAL REGISTER */}
+              {currentTab === "pos" && isSynced && (
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                  
+                  {/* Left item grid column */}
+                  <div className="xl:col-span-7 flex flex-col gap-6">
+                    
+                    {/* Header Filters & Weighing Terminal Inputs */}
+                    <div className="glass-panel p-4 rounded-3xl flex flex-col gap-4">
+                      
+                      {/* Search Bar */}
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Icon name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                          <input 
+                            type="text" 
+                            placeholder="Filter products, scan barcodes..." 
+                            value={posSearch}
+                            onChange={(e) => setPosSearch(e.target.value)}
+                            className="w-full glass-input pl-10 pr-4 py-2.5 rounded-xl text-sm"
+                          />
+                        </div>
+                        <div className="flex gap-1 overflow-x-auto no-scrollbar max-w-[200px]">
+                          {["All", ...shopConfig.customCategories].map(cat => (
+                            <button
+                              key={cat}
+                              onClick={() => setPosCategory(cat)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                                posCategory === cat ? 'bg-orange-500 text-white shadow-md' : 'bg-white/5 text-gray-300'
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Weight / Fractional Unit Terminal Panel */}
+                      <div className="p-3 bg-white/5 rounded-2xl border border-white/5 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">1. Custom Measure/Weight</label>
+                          <input 
+                            type="number" 
+                            value={weightEntry}
+                            onChange={(e) => setWeightEntry(e.target.value)}
+                            placeholder="e.g. 40, 1.5, 500"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-mono font-bold"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">2. Custom Unit Type</label>
+                          <select 
+                            value={weightUnit} 
+                            onChange={(e) => setWeightUnit(e.target.value)}
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-bold"
+                          >
+                            <option value="kg">kg (Kilogram)</option>
+                            <option value="gram">gram (Grams)</option>
+                            <option value="Liter">Liter</option>
+                            <option value="ml">ml (Milliliters)</option>
+                            <option value="Piece">Piece / Unit</option>
+                            <option value="Dozen">Dozen</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">3. Manual Cost Override (Optional)</label>
+                          <input 
+                            type="number" 
+                            value={manualTotalOverride}
+                            onChange={(e) => setManualTotalOverride(e.target.value)}
+                            placeholder="Flat price (e.g. 25)"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-mono"
+                          />
+                        </div>
+
+                        <div className="flex items-end">
+                          <div className="w-full p-2 bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[10px] font-bold rounded-xl text-center">
+                            Weight / Overrides applied at click!
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Shop Inventory Grid Cards */}
+                    {filteredProducts.length === 0 ? (
+                      <div className="glass-panel p-12 rounded-3xl text-center">
+                        <p className="text-sm text-gray-400">No matching products found inside database files.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {filteredProducts.map(prod => (
+                          <div 
+                            key={prod.id}
+                            onClick={() => prod.stock > 0 ? addItemToCart(prod) : triggerToast("Out of stock!", "error")}
+                            className={`glass-panel p-4 rounded-3xl border border-white/5 hover:border-orange-500/30 transition-all cursor-pointer transform hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between ${prod.stock === 0 ? 'opacity-40' : ''}`}
+                          >
+                            <div>
+                              <div className="flex justify-between items-start">
+                                <span className="text-[10px] uppercase font-extrabold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/10">{prod.category}</span>
+                                <span className="text-[10px] text-gray-400">Stock: {prod.stock} {prod.baseUnit}</span>
+                              </div>
+                              {prod.imageUrl && (
+                                <img src={prod.imageUrl} alt={prod.name} className="w-full h-20 object-cover rounded-xl mt-2 border border-white/10" />
+                              )}
+                              <h4 className="text-sm font-bold text-white mt-2">{prod.name}</h4>
+                            </div>
+                            <div className="mt-4 pt-2 border-t border-white/5 flex justify-between items-end">
+                              <div>
+                                <p className="text-[10px] text-gray-400">Rate</p>
+                                <p className="text-sm font-black text-white">₹{prod.basePrice}/{prod.baseUnit}</p>
+                              </div>
+                              {prod.hasSubUnit && (
+                                <div className="text-right">
+                                  <p className="text-[9px] text-orange-400 font-bold">Subunit Active</p>
+                                  <p className="text-[9px] text-gray-400">₹{(prod.basePrice / prod.subUnitFactor).toFixed(3)}/{prod.subUnitName}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dynamic Register Checkout column */}
+                  <div className="xl:col-span-5 glass-panel p-5 rounded-3xl border border-white/10 flex flex-col justify-between min-h-[500px]">
+                    <div>
+                      <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                        <h3 className="font-extrabold text-white flex items-center gap-2">
+                          <Icon name="shoppingCart" className="text-orange-500" />
+                          Checkout Register
+                        </h3>
+                        <button onClick={() => setCart([])} className="text-xs text-red-400 hover:text-red-300">Clear</button>
+                      </div>
+
+                      {/* Customer Credentials Input */}
+                      <div className="grid grid-cols-2 gap-2 py-3 border-b border-white/5">
+                        <input 
+                          type="text" 
+                          placeholder="Cust. Name" 
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          className="glass-input px-3 py-1.5 rounded-xl text-xs font-semibold"
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Cust. Phone" 
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          className="glass-input px-3 py-1.5 rounded-xl text-xs font-semibold"
+                        />
+                      </div>
+
+                      {/* Item lists in cart */}
+                      <div className="py-3 space-y-3 max-h-[250px] overflow-y-auto no-scrollbar pr-1">
+                        {cart.length === 0 ? (
+                          <p className="text-xs text-gray-500 text-center py-6">Register basket is empty.</p>
+                        ) : (
+                          cart.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between p-2.5 bg-white/5 rounded-2xl border border-white/5 text-xs">
+                              <div>
+                                <h5 className="font-bold text-white">{item.product.name}</h5>
+                                <p className="text-[10px] text-orange-400 mt-0.5">{item.quantity} {item.selectedUnit} @ {item.rateDetails}</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono font-bold text-white">₹{item.totalCost.toFixed(2)}</span>
+                                <button onClick={() => removeFromCart(index)} className="text-red-400 hover:text-red-300">
+                                  <Icon name="trash" className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border-t border-white/5 pt-4 space-y-4">
+                      
+                      {/* Checkout Options Panel */}
+                      <div className="bg-white/5 p-3 rounded-2xl border border-white/5 space-y-3">
+                        <div class="flex items-center justify-between text-xs">
+                          <label className="text-gray-400 font-semibold">Taxes Toggle</label>
+                          <button 
+                            onClick={() => setManualTaxToggle(!manualTaxToggle)}
+                            className={`px-3 py-1 rounded-lg text-[10px] font-bold ${manualTaxToggle ? 'bg-orange-500 text-white' : 'bg-white/10 text-gray-300'}`}
+                          >
+                            {manualTaxToggle ? "GST (5%) Active" : "Tax Free Bill"}
+                          </button>
+                        </div>
+
+                        {/* Payment Modes selection */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-gray-400 font-bold uppercase block">Payment Method Selector</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {["Cash", "UPI", "Passbook"].map(mode => (
+                              <button 
+                                key={mode}
+                                type="button"
+                                onClick={() => setPaymentMode(mode)}
+                                className={`py-1.5 rounded-lg text-xs font-bold transition-all ${paymentMode === mode ? 'bg-orange-500 text-white shadow-md' : 'bg-white/5 text-gray-300'}`}
+                              >
+                                {mode}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* If UPI option is chosen, highlight UPI credentials */}
+                        {paymentMode === "UPI" && (
+                          <div className="p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-xl text-xs space-y-1">
+                            <p className="font-bold text-orange-300">Active merchant UPI ID:</p>
+                            <p className="font-mono text-white text-[10px]">{shopConfig.activeUpiId || "Configure inside Settings!"}</p>
+                          </div>
+                        )}
+
+                        {/* If Passbook is chosen, input Passbook UID */}
+                        {paymentMode === "Passbook" && (
+                          <div className="space-y-1.5 animate-scale-up">
+                            <label className="text-[10px] text-gray-300 font-bold block">Enter Customer Passbook UID *</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. PB-540201" 
+                              value={passbookCheckoutUid}
+                              onChange={(e) => setPassbookCheckoutUid(e.target.value)}
+                              className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-mono font-bold"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Calculations Panel */}
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between text-gray-400">
+                          <span>Subtotal Cost</span>
+                          <span className="text-white font-mono">₹{cart.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-gray-400">
+                          <span>SGST + CGST (5%)</span>
+                          <span className="text-white font-mono">₹{(manualTaxToggle ? cart.reduce((sum, item) => sum + item.totalCost, 0) * 0.05 : 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm pt-2 border-t border-dashed border-white/10">
+                          <span className="font-bold text-white">Grand Net Amount</span>
+                          <span className="text-xl font-black text-orange-400">
+                            ₹{(cart.reduce((sum, item) => sum + item.totalCost, 0) * (manualTaxToggle ? 1.05 : 1)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Checkout Buttons */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button 
+                          onClick={() => completeCheckout("Cancelled")}
+                          disabled={cart.length === 0}
+                          className="bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white text-red-300 text-xs py-3 rounded-2xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Reject / Cancel Checkout
+                        </button>
+                        <button 
+                          onClick={() => completeCheckout("Success")}
+                          disabled={cart.length === 0}
+                          className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-xs py-3 rounded-2xl font-black shadow-lg shadow-orange-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Approve / Payment Done
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* TAB CONTAINER: INVENTORY MANAGER */}
+              {currentTab === "inventory" && isSynced && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                      <Icon name="package" className="text-orange-500 w-8 h-8" />
+                      Shop Products Register
+                    </h2>
+                    <button 
+                      onClick={() => {
+                        setEditingProduct({
+                          id: "", name: "", category: shopConfig.customCategories[0] || "Others", baseUnit: "kg", basePrice: 40, hasSubUnit: true, subUnitName: "gram", subUnitFactor: 1000, stock: 100, minStock: 10, imageUrl: ""
+                        });
+                        setIsProductModalOpen(true);
+                      }}
+                      className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-md shadow-orange-500/15"
+                    >
+                      <Icon name="plus" />
+                      Add Product
+                    </button>
+                  </div>
+
+                  <div className="glass-panel rounded-3xl overflow-hidden border border-white/10">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-gray-300">
+                        <thead className="bg-white/5 border-b border-white/5 text-orange-400 uppercase font-bold tracking-wider">
+                          <tr>
+                            <th className="p-4">Item Name</th>
+                            <th className="p-4">Category</th>
+                            <th className="p-4">Unit Pricing</th>
+                            <th className="p-4">Subunit Conversion Factor</th>
+                            <th className="p-4">Stock Ledger</th>
+                            <th className="p-4 text-center">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {products.map(p => (
+                            <tr key={p.id} className="hover:bg-white/5 transition-all">
+                              <td className="p-4 flex items-center gap-3">
+                                {p.imageUrl && <img src={p.imageUrl} alt={p.name} className="w-8 h-8 rounded-lg object-cover" />}
+                                <span className="font-extrabold text-white">{p.name}</span>
+                              </td>
+                              <td className="p-4">{p.category}</td>
+                              <td className="p-4 font-bold">₹{p.basePrice}/{p.baseUnit}</td>
+                              <td className="p-4 text-orange-300 font-semibold">
+                                {p.hasSubUnit ? `1 ${p.baseUnit} = ${p.subUnitFactor} ${p.subUnitName}` : "N/A"}
+                              </td>
+                              <td className="p-4 font-bold">
+                                <span className={p.stock <= p.minStock ? 'text-red-400 animate-pulse' : 'text-green-400'}>
+                                  {p.stock} {p.baseUnit}
+                                </span>
+                              </td>
+                              <td className="p-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button onClick={() => { setEditingProduct({ ...p }); setIsProductModalOpen(true); }} className="text-orange-400 hover:text-orange-300">Edit</button>
+                                  <button onClick={() => deleteProductDetails(p.id)} className="text-red-400 hover:text-red-300">Delete</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONTAINER: PURCHASES & REFILLS */}
+              {currentTab === "purchases" && isSynced && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    <Icon name="truck" className="text-orange-500 w-8 h-8" />
+                    Inventory Stock Refills Logs
+                  </h2>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    {/* Add Refill purchase Column */}
+                    <form onSubmit={executeInventoryRefill} className="lg:col-span-4 glass-panel p-5 rounded-3xl border border-orange-500/10 space-y-4">
+                      <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2">Log New Stock Refill</h3>
+                      
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Wholesale Supplier/Party Name</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={newPurchase.partyName}
+                          onChange={(e) => setNewPurchase({ ...newPurchase, partyName: e.target.value })}
+                          placeholder="e.g. Abinash Wholesale Ltd."
+                          className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Select Store Item *</label>
+                        <select 
+                          required
+                          value={newPurchase.itemId}
+                          onChange={(e) => setNewPurchase({ ...newPurchase, itemId: e.target.value })}
+                          className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                        >
+                          <option value="">-- Choose Item --</option>
+                          {products.map(p => (
+                            <option key={p.id} value={p.id}>{p.name} ({p.stock} {p.baseUnit} left)</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Refill Qty *</label>
+                          <input 
+                            type="number" 
+                            step="any"
+                            required
+                            value={newPurchase.qty}
+                            onChange={(e) => setNewPurchase({ ...newPurchase, qty: e.target.value })}
+                            placeholder="e.g. 100"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-mono"
+                          />
+                        </div>
+                        
+                        {/* MANUAL REFILL UNIT TEXTBOX ENTRY */}
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Refill Unit * (Manual)</label>
+                          <input 
+                            type="text" 
+                            required
+                            value={newPurchase.unitName}
+                            onChange={(e) => setNewPurchase({ ...newPurchase, unitName: e.target.value })}
+                            placeholder="e.g. bags, crate, kg"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-semibold"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Wholesale Purchase Price (per unit) *</label>
+                        <input 
+                          type="number" 
+                          step="any"
+                          required
+                          value={newPurchase.costPrice}
+                          onChange={(e) => setNewPurchase({ ...newPurchase, costPrice: e.target.value })}
+                          placeholder="Wholesale rate (e.g. 35)"
+                          className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Supplier Payment Status</label>
+                        <select 
+                          value={newPurchase.paymentStatus}
+                          onChange={(e) => setNewPurchase({ ...newPurchase, paymentStatus: e.target.value })}
+                          className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                        >
+                          <option value="Fully Paid">Fully Paid</option>
+                          <option value="Due">Due (Add to Lenders Ledger)</option>
+                          <option value="Partially Paid">Partially Paid</option>
+                        </select>
+                      </div>
+
+                      {newPurchase.paymentStatus === "Partially Paid" && (
+                        <div className="animate-scale-up">
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Downpayment Paid (₹) *</label>
+                          <input 
+                            type="number" 
+                            required
+                            value={newPurchase.paidAmount}
+                            onChange={(e) => setNewPurchase({ ...newPurchase, paidAmount: e.target.value })}
+                            placeholder="e.g. 500"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-mono"
+                          />
+                        </div>
+                      )}
+
+                      <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs py-3 rounded-2xl shadow-md">
+                        Log Refill & Update Stock
+                      </button>
+                    </form>
+
+                    {/* Historical Purchase Logs ledger Column */}
+                    <div className="lg:col-span-8 space-y-4">
+                      <div className="glass-panel p-5 rounded-3xl border border-white/5">
+                        <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2 mb-3">Refill Stock History Logs</h3>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs text-gray-300">
+                            <thead className="text-orange-400 font-bold uppercase">
+                              <tr>
+                                <th className="pb-2">ID</th>
+                                <th className="pb-2">Date</th>
+                                <th className="pb-2">Supplier Party</th>
+                                <th className="pb-2">Item Refilled</th>
+                                <th className="pb-2">Total Amount</th>
+                                <th className="pb-2">Payment Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 font-medium">
+                              {(purchases || []).length === 0 ? (
+                                <tr><td colSpan="6" class="text-center py-6 text-gray-500">No stock refills recorded.</td></tr>
+                              ) : (
+                                (purchases || []).map(pur => (
+                                  <tr key={pur.id} className="hover:bg-white/5">
+                                    <td className="py-2.5 font-mono">{pur.id}</td>
+                                    <td className="py-2.5 text-gray-400">{pur.date}</td>
+                                    <td className="py-2.5 text-white font-bold">{pur.partyName}</td>
+                                    <td className="py-2.5">{pur.itemName} ({pur.quantity} {pur.unitName})</td>
+                                    <td className="py-2.5 font-bold">₹{(pur.totalCost || 0).toFixed(2)}</td>
+                                    <td className="py-2.5 font-bold">
+                                      <span className={`px-2 py-0.5 rounded text-[10px] ${pur.paymentStatus === 'Fully Paid' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                                        {pur.paymentStatus}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONTAINER: FINANCIAL SERVICES */}
+              {currentTab === "services" && isSynced && (
+                <div className="space-y-6">
+                  
+                  {/* Services Mini Sub Header */}
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                      <Icon name="wallet" className="text-orange-500 w-8 h-8" />
+                      Bookkeeping Services Panel
+                    </h2>
+                    
+                    <div className="flex gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10">
+                      {["passbook", "loans", "lenders", "debtors"].map(subTab => (
+                        <button
+                          key={subTab}
+                          onClick={() => setServicesTab(subTab)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                            servicesTab === subTab ? 'bg-orange-500 text-white shadow-md' : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          {subTab}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SUB SECTION: CUSTOMER PASSBOOKS */}
+                  {servicesTab === "passbook" && (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                      
+                      {/* Register New Passbook Column */}
+                      <form onSubmit={createPassbookAccount} className="lg:col-span-4 glass-panel p-5 rounded-3xl border border-orange-500/10 space-y-4 animate-scale-up">
+                        <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2">Register Customer Passbook</h3>
+                        
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Customer Full Name *</label>
+                          <input 
+                            type="text" required
+                            value={newPassbook.name}
+                            onChange={(e) => setNewPassbook({ ...newPassbook, name: e.target.value })}
+                            placeholder="e.g. Abinash Rizal"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Phone Number</label>
+                            <input 
+                              type="text"
+                              value={newPassbook.phone}
+                              onChange={(e) => setNewPassbook({ ...newPassbook, phone: e.target.value })}
+                              placeholder="e.g. 9876543210"
+                              className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Opening Bal (₹)</label>
+                            <input 
+                              type="number"
+                              value={newPassbook.openingBal}
+                              onChange={(e) => setNewPassbook({ ...newPassbook, openingBal: e.target.value })}
+                              placeholder="e.g. 1500"
+                              className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Passbook Security PIN / Password *</label>
+                          <input 
+                            type="password" required
+                            value={newPassbook.password}
+                            onChange={(e) => setNewPassbook({ ...newPassbook, password: e.target.value })}
+                            placeholder="Set numeric PIN/password"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Expiry Date / Time</label>
+                          <input 
+                            type="date"
+                            value={newPassbook.expiryDate}
+                            onChange={(e) => setNewPassbook({ ...newPassbook, expiryDate: e.target.value })}
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Customer Home Address</label>
+                          <input 
+                            type="text"
+                            value={newPassbook.address}
+                            onChange={(e) => setNewPassbook({ ...newPassbook, address: e.target.value })}
+                            placeholder="Residential Details"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                          />
+                        </div>
+
+                        <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs py-3 rounded-2xl shadow-md">
+                          Generate Security Passbook Account
+                        </button>
+                      </form>
+
+                      {/* Manage and Audit Passbooks Column */}
+                      <div className="lg:col-span-8 space-y-4">
+                        <div className="glass-panel p-5 rounded-3xl border border-white/5 space-y-4">
+                          <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2">Passbook Audit & Transactions Manager</h3>
+                          
+                          {/* Search Passbook UID */}
+                          <div className="flex gap-2">
+                            <input 
+                              type="text" 
+                              placeholder="Enter Passbook UID (e.g. PB-123456)" 
+                              value={selectedPassbookUid}
+                              onChange={(e) => setSelectedPassbookUid(e.target.value)}
+                              className="flex-1 glass-input px-4 py-2 rounded-xl text-xs font-mono font-bold"
+                            />
+                            <button 
+                              onClick={handleFetchPassbook}
+                              className="bg-orange-500 hover:bg-orange-600 text-white px-4 rounded-xl text-xs font-bold"
+                            >
+                              Fetch Passbook Details
+                            </button>
+                          </div>
+
+                          {fetchedPassbook ? (
+                            <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-4 animate-scale-up">
+                              
+                              {/* Credentials detail layout */}
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                <div>
+                                  <p className="text-gray-400">Cardholder Name</p>
+                                  <p className="font-extrabold text-white text-sm">{fetchedPassbook.name}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Passbook UID</p>
+                                  <p className="font-mono font-bold text-orange-400 text-sm">{fetchedPassbook.uid}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Available Balance</p>
+                                  <p className="font-extrabold text-white text-sm text-green-400 font-mono">₹{(fetchedPassbook.balance || 0).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Account Expiry</p>
+                                  <p className="text-white font-semibold">{fetchedPassbook.expiryDate || "Active"}</p>
+                                </div>
+                              </div>
+
+                              {/* Transaction Action form */}
+                              <div className="border-t border-white/5 pt-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                                <div>
+                                  <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Transaction Type</label>
+                                  <select 
+                                    value={passbookActionType}
+                                    onChange={(e) => setPassbookActionType(e.target.value)}
+                                    className="w-full glass-input p-2 rounded-lg text-xs"
+                                  >
+                                    <option value="deposit">Deposit (Credit Account)</option>
+                                    <option value="withdraw">Withdrawal (Debit Account)</option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Enter Value (₹)</label>
+                                  <input 
+                                    type="number"
+                                    value={passbookActionAmount}
+                                    onChange={(e) => setPassbookActionAmount(e.target.value)}
+                                    placeholder="Amount e.g. 500"
+                                    className="w-full glass-input p-2 rounded-lg text-xs font-mono"
+                                  />
+                                </div>
+
+                                {passbookActionType === "withdraw" ? (
+                                  <div>
+                                    <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Security PIN/Password</label>
+                                    <input 
+                                      type="password"
+                                      value={passbookActionPassword}
+                                      onChange={(e) => setPassbookActionPassword(e.target.value)}
+                                      placeholder="Passbook Code"
+                                      className="w-full glass-input p-2 rounded-lg text-xs"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="hidden md:block"></div>
+                                )}
+
+                                <button 
+                                  onClick={executePassbookAction}
+                                  className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-xs py-2 rounded-xl h-10 shadow-md"
+                                >
+                                  Execute Ledger Adjustment
+                                </button>
+                              </div>
+
+                              {/* Recovery triggers (Custom overlay) */}
+                              <div className="text-right">
+                                <button 
+                                  type="button" 
+                                  onClick={async () => {
+                                    const codeInput = await triggerCustomPrompt("Password Recovery Verification", "Enter account custom Recovery Code or Answer to reset Passbook PIN:", "Secret Code");
+                                    if (codeInput) {
+                                      const newPass = await triggerCustomPrompt("PIN Recovery Successful", "Enter new Numeric Security Password PIN:", "New PIN Password");
+                                      if (newPass) {
+                                        const updatedPb = (passbooks || []).map(p => p.uid === fetchedPassbook.uid ? { ...p, password: newPass } : p);
+                                        setPassbooks(updatedPb);
+                                        await syncChanges(null, null, null, null, updatedPb, null);
+                                        setFetchedPassbook({ ...fetchedPassbook, password: newPass });
+                                        triggerToast("Passbook credentials updated successfully", "success");
+                                      }
+                                    }
+                                  }}
+                                  className="text-[10px] text-orange-400 hover:underline"
+                                >
+                                  Reset Security Password Code?
+                                </button>
+                              </div>
+
+                              {/* Statements history ledger */}
+                              <div className="border-t border-white/5 pt-3 space-y-2">
+                                <h4 className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">Account Transaction Statements</h4>
+                                <div className="max-h-40 overflow-y-auto no-scrollbar space-y-1.5 pr-1 text-[11px]">
+                                  {(fetchedPassbook.statement || []).map((st, sIdx) => (
+                                    <div key={sIdx} className="flex justify-between items-center p-2 bg-white/5 rounded-xl border border-white/5 font-mono">
+                                      <span className="text-gray-400">{st.date}</span>
+                                      <span className="font-extrabold text-white uppercase">{st.type}</span>
+                                      <span className={st.type.includes("DEPOSIT") || st.type.includes("Opening") || st.type.includes("CREDIT") ? "text-green-400" : "text-red-400"}>
+                                        ₹{(st.amount || 0).toFixed(2)}
+                                      </span>
+                                      <span className="text-gray-400">Balance: ₹{(st.balance || 0).toFixed(2)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                            </div>
+                          ) : (
+                            <div className="p-6 text-center text-gray-500 border border-dashed border-white/10 rounded-2xl">
+                              Audit session empty. Fetch passbook above to perform credits, debits or print statements.
+                            </div>
+                          )}
+
+                        </div>
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* SUB SECTION: LOANS */}
+                  {servicesTab === "loans" && (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                      
+                      {/* Register New Loan Account */}
+                      <form onSubmit={executeLoanDisbursement} className="lg:col-span-4 glass-panel p-5 rounded-3xl border border-orange-500/10 space-y-4 animate-scale-up">
+                        <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2">Log New Loan Disbursement</h3>
+                        
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Borrower Customer Name *</label>
+                          <input 
+                            type="text" required
+                            value={newLoan.customerName}
+                            onChange={(e) => setNewLoan({ ...newLoan, customerName: e.target.value })}
+                            placeholder="e.g. Abinash Rizal"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Phone Number</label>
+                          <input 
+                            type="text"
+                            value={newLoan.phone}
+                            onChange={(e) => setNewLoan({ ...newLoan, phone: e.target.value })}
+                            placeholder="Contact details"
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Principal (₹)</label>
+                            <input 
+                              type="number" required
+                              value={newLoan.principal}
+                              onChange={(e) => setNewLoan({ ...newLoan, principal: e.target.value })}
+                              placeholder="e.g. 5000"
+                              className="w-full glass-input px-2 py-1.5 rounded-xl text-xs font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Rate % (Yearly)</label>
+                            <input 
+                              type="number" step="any"
+                              value={newLoan.rate}
+                              onChange={(e) => setNewLoan({ ...newLoan, rate: e.target.value })}
+                              placeholder="e.g. 12"
+                              className="w-full glass-input px-2 py-1.5 rounded-xl text-xs font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Period (Months)</label>
+                            <input 
+                              type="number"
+                              value={newLoan.period}
+                              onChange={(e) => setNewLoan({ ...newLoan, period: e.target.value })}
+                              placeholder="e.g. 6"
+                              className="w-full glass-input px-2 py-1.5 rounded-xl text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Disbursement Fund Delivery Method</label>
+                          <select 
+                            value={newLoan.payMode}
+                            onChange={(e) => setNewLoan({ ...newLoan, payMode: e.target.value })}
+                            className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-bold"
+                          >
+                            <option value="Cash">Disburse Cash Handout</option>
+                            <option value="UPI">Disburse via Merchant UPI</option>
+                            <option value="Passbook">Disburse Direct to Customer Passbook Account</option>
+                          </select>
+                        </div>
+
+                        {newLoan.payMode === "Passbook" && (
+                          <div className="animate-scale-up">
+                            <label className="text-[10px] text-gray-300 font-bold block mb-1">Borrower Passbook UID *</label>
+                            <input 
+                              type="text" required
+                              value={newLoan.passbookUid}
+                              onChange={(e) => setNewLoan({ ...newLoan, passbookUid: e.target.value })}
+                              placeholder="e.g. PB-123456"
+                              className="w-full glass-input px-3 py-1.5 rounded-xl text-xs font-mono font-bold"
+                            />
+                          </div>
+                        )}
+
+                        <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs py-3 rounded-2xl shadow-md">
+                          Disburse & Open Loan Account
+                        </button>
+                      </form>
+
+                      {/* Loans list Ledger column */}
+                      <div className="lg:col-span-8 space-y-4">
+                        
+                        {/* REPAYMENT OVERLAY CONTROL PANEL */}
+                        <form onSubmit={handleLoanRepayment} className="glass-panel p-5 rounded-3xl border border-white/5 space-y-3">
+                          <h3 className="font-bold text-white text-xs border-b border-white/5 pb-1">Register Loan Repayments</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                            <div>
+                              <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Select Loan Account ID</label>
+                              <select 
+                                value={loanRepayId}
+                                onChange={(e) => setLoanRepayId(e.target.value)}
+                                className="w-full glass-input p-2 rounded-lg text-xs font-mono"
+                              >
+                                <option value="">-- Choose Account --</option>
+                                {(loans || []).filter(l => l.status === "Active").map(l => (
+                                  <option key={l.id} value={l.id}>{l.id} - {l.customerName} (Due: ₹{l.remainingAmount})</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Repayment Value (₹)</label>
+                              <input 
+                                type="number" step="any" required
+                                value={loanRepayAmount}
+                                onChange={(e) => setLoanRepayAmount(e.target.value)}
+                                placeholder="Value (e.g. 1000)"
+                                className="w-full glass-input p-2 rounded-lg text-xs font-mono"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Repay Mode</label>
+                              <select 
+                                value={loanRepayMode}
+                                onChange={(e) => setLoanRepayMode(e.target.value)}
+                                className="w-full glass-input p-2 rounded-lg text-xs font-bold"
+                              >
+                                <option value="Cash">Cash Return</option>
+                                <option value="UPI">UPI Return</option>
+                                <option value="Passbook">Debit Borrower Passbook Account</option>
+                              </select>
+                            </div>
+
+                            <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs py-2 rounded-xl h-10 shadow-md">
+                              Log Loan Return
+                            </button>
+                          </div>
+                        </form>
+
+                        {/* Active Loans Listing Grid Table */}
+                        <div className="glass-panel p-5 rounded-3xl border border-white/5">
+                          <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2 mb-3">Active Credit & Loan Book Records</h3>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs text-gray-300">
+                              <thead className="text-orange-400 font-bold uppercase">
+                                <tr>
+                                  <th className="pb-2">Loan ID</th>
+                                  <th className="pb-2">Date</th>
+                                  <th className="pb-2">Borrower Name</th>
+                                  <th className="pb-2">Principal (Int)</th>
+                                  <th className="pb-2">Total Payable</th>
+                                  <th className="pb-2">Remaining Debt</th>
+                                  <th className="pb-2">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-white/5 font-medium">
+                                {(loans || []).length === 0 ? (
+                                  <tr><td colSpan="7" className="text-center py-6 text-gray-500 font-bold">No loans registered in current folder.</td></tr>
+                                ) : (
+                                  (loans || []).map(l => (
+                                    <tr key={l.id} className="hover:bg-white/5">
+                                      <td className="py-2.5 font-mono">{l.id}</td>
+                                      <td className="py-2.5 text-gray-400">{l.date}</td>
+                                      <td className="py-2.5 text-white font-bold">{l.customerName}</td>
+                                      <td className="py-2.5">₹{l.principal} ({l.rate}%)</td>
+                                      <td className="py-2.5">₹{(l.totalPayable || 0).toFixed(2)}</td>
+                                      <td className="py-2.5 text-orange-400 font-extrabold">₹{(l.remainingAmount || 0).toFixed(2)}</td>
+                                      <td className="py-2.5">
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${l.status === 'Active' ? 'bg-amber-500/10 text-amber-400 animate-pulse' : 'bg-green-500/10 text-green-400'}`}>
+                                          {l.status}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* SUB SECTION: LENDERS */}
+                  {servicesTab === "lenders" && (
+                    <div className="glass-panel p-6 rounded-3xl border border-white/5 space-y-4 animate-scale-up">
+                      <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2">Lenders & Wholesale Supplier Debt Book</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-gray-300">
+                          <thead className="text-orange-400 font-bold uppercase">
+                            <tr>
+                              <th className="pb-2">Refill Purchase ID</th>
+                              <th className="pb-2">Date</th>
+                              <th className="pb-2">Wholesale Party</th>
+                              <th className="pb-2">Wholesale Total Cost</th>
+                              <th className="pb-2">Downpayment Paid</th>
+                              <th className="pb-2">Remaining Dues</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {(purchases || []).filter(p => p.dueAmount > 0).length === 0 ? (
+                              <tr><td colSpan="6" class="text-center py-6 text-gray-500">No pending payments to wholesale parties recorded.</td></tr>
+                            ) : (
+                              (purchases || []).filter(p => p.dueAmount > 0).map(p => (
+                                <tr key={p.id}>
+                                  <td className="py-3 font-mono">{p.id}</td>
+                                  <td className="py-3 text-gray-400">{p.date}</td>
+                                  <td className="py-3 font-bold text-white">{p.partyName}</td>
+                                  <td className="py-3 font-bold">₹{(p.totalCost || 0).toFixed(2)}</td>
+                                  <td className="py-3 text-green-400">₹{(p.paidAmount || 0).toFixed(2)}</td>
+                                  <td className="py-3 text-red-400 font-extrabold">₹{(p.dueAmount || 0).toFixed(2)}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SUB SECTION: DEBTORS */}
+                  {servicesTab === "debtors" && (
+                    <div className="glass-panel p-6 rounded-3xl border border-white/5 space-y-4 animate-scale-up">
+                      <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2">Debtors Book</h3>
+                      <p className="text-xs text-gray-400">Lists active loan balances and passbook credit lines from local system accounts.</p>
+                      <div class="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-gray-300">
+                          <thead className="text-orange-400 font-bold uppercase">
+                            <tr>
+                              <th className="pb-2">Borrower Name</th>
+                              <th className="pb-2">Contact Details</th>
+                              <th className="pb-2">Disbursed Balance</th>
+                              <th className="pb-2">Total Interest Payable</th>
+                              <th className="pb-2">Active Net Debit Balance</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {(loans || []).filter(l => l.status === "Active").length === 0 ? (
+                              <tr><td colSpan="5" class="text-center py-6 text-gray-500">No active consumer debt recorded.</td></tr>
+                            ) : (
+                              (loans || []).filter(l => l.status === "Active").map(l => (
+                                <tr key={l.id}>
+                                  <td className="py-3 font-extrabold text-white">{l.customerName}</td>
+                                  <td className="py-3 font-mono text-gray-400">{l.phone}</td>
+                                  <td className="py-3">₹{(l.principal || 0).toFixed(2)}</td>
+                                  <td className="py-3 text-orange-300">₹{(l.calculatedInterest || 0).toFixed(2)} ({l.rate}%)</td>
+                                  <td className="py-3 text-red-400 font-extrabold font-mono">₹{(l.remainingAmount || 0).toFixed(2)}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              )}
+
+              {/* TAB CONTAINER: SALES LOG */}
+              {currentTab === "sales" && isSynced && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    <Icon name="fileText" className="text-orange-500 w-8 h-8" />
+                    Sales Invoices History Ledger
+                  </h2>
+
+                  <div className="glass-panel rounded-3xl overflow-hidden border border-white/10">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-gray-300">
+                        <thead className="bg-white/5 border-b border-white/5 text-orange-400 uppercase font-bold tracking-wider">
+                          <tr>
+                            <th className="p-4">Txn ID</th>
+                            <th className="p-4">Date & Time</th>
+                            <th className="p-4">Customer Details</th>
+                            <th className="p-4">Payment Method</th>
+                            <th className="p-4">Invoice Net Total</th>
+                            <th className="p-4">Payment Status</th>
+                            <th className="p-4 text-center">Invoice Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {(sales || []).length === 0 ? (
+                            <tr><td colSpan="7" class="text-center p-12 text-gray-500">No invoices recorded inside directory database.</td></tr>
+                          ) : (
+                            sales.map(txn => (
+                              <tr key={txn.id} className="hover:bg-white/5">
+                                <td className="p-4 font-mono font-bold text-white">{txn.id}</td>
+                                <td className="p-4">{txn.date}</td>
+                                <td className="p-4">
+                                  <p className="font-extrabold text-white">{txn.customerName}</p>
+                                  <p className="text-[10px] text-gray-400 font-mono">{txn.customerPhone}</p>
+                                </td>
+                                <td className="p-4 font-semibold text-orange-400">{txn.paymentMode}</td>
+                                <td className="p-4 font-black">₹{(txn.totalAmount || 0).toFixed(2)}</td>
+                                <td className="p-4 font-bold">
+                                  <span className={`px-2.5 py-1 rounded text-[10px] ${txn.status === 'Success' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                                    {txn.status === 'Success' ? 'Success' : 'Rejected'}
+                                  </span>
+                                </td>
+                                <td className="p-4 text-center">
+                                  <button 
+                                    onClick={() => setActiveReceipt(txn)}
+                                    className="bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white px-3 py-1.5 rounded-lg font-bold transition-all"
+                                  >
+                                    View / Reprint Bill
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONTAINER: SYSTEM PREFERENCES */}
+              {currentTab === "settings" && (
+                <div className="space-y-6 max-w-4xl animate-scale-up">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    <Icon name="settings" className="text-orange-500 w-8 h-8" />
+                    System Preferences & Directories Settings
+                  </h2>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    {/* Left Settings Profile */}
+                    <div className="lg:col-span-8 glass-panel p-6 rounded-3xl space-y-6">
+                      <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2">Configure Invoice & Store Identity</h3>
+                      
+                      <div className="space-y-4">
+                        {/* Logo Uploading (Canvas compressor active) */}
+                        <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                          <div className="w-16 h-16 rounded-full overflow-hidden bg-zinc-800 border-2 border-orange-500 flex items-center justify-center shrink-0">
+                            {shopConfig.logo ? (
+                              <img src={shopConfig.logo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                              <Icon name="upload" className="w-8 h-8 text-gray-400" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white mb-1">Optimized Bill Logo Image</p>
+                            <input 
+                              type="file" 
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              className="text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-orange-500/20 file:text-orange-300 hover:file:bg-orange-500 hover:file:text-white cursor-pointer"
+                            />
+                            <p className="text-[9px] text-gray-500 mt-1">Logo is automatically scaled to a fast-loading size to prevent blank pages.</p>
+                          </div>
+                        </div>
+
+                        {/* General Form Inputs */}
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <label className="text-gray-400 font-bold block mb-1">Store / Business Name *</label>
+                            <input 
+                              type="text"
+                              value={shopConfig.name}
+                              onChange={(e) => setShopConfig({ ...shopConfig, name: e.target.value })}
+                              className="w-full glass-input p-2.5 rounded-xl text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-400 font-bold block mb-1">Store Tagline</label>
+                            <input 
+                              type="text"
+                              value={shopConfig.tagline}
+                              onChange={(e) => setShopConfig({ ...shopConfig, tagline: e.target.value })}
+                              className="w-full glass-input p-2.5 rounded-xl text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-400 font-bold block mb-1">Billing Address Address *</label>
+                            <input 
+                              type="text"
+                              value={shopConfig.address}
+                              onChange={(e) => setShopConfig({ ...shopConfig, address: e.target.value })}
+                              className="w-full glass-input p-2.5 rounded-xl text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-400 font-bold block mb-1">Store Phone Number *</label>
+                            <input 
+                              type="text"
+                              value={shopConfig.phone}
+                              onChange={(e) => setShopConfig({ ...shopConfig, phone: e.target.value })}
+                              className="w-full glass-input p-2.5 rounded-xl text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-400 font-bold block mb-1">GSTIN (Optional)</label>
+                            <input 
+                              type="text"
+                              value={shopConfig.gstin}
+                              onChange={(e) => setShopConfig({ ...shopConfig, gstin: e.target.value })}
+                              className="w-full glass-input p-2.5 rounded-xl text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-400 font-bold block mb-1">Primary UPI ID for Live QR Payments</label>
+                            <select 
+                              value={shopConfig.activeUpiId}
+                              onChange={(e) => setShopConfig({ ...shopConfig, activeUpiId: e.target.value })}
+                              className="w-full glass-input p-2.5 rounded-xl text-xs"
+                            >
+                              {(shopConfig.upiIds || []).map((idVal, idIdx) => (
+                                <option key={idIdx} value={idVal}>{idVal}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* UPI ID Management Section */}
+                        <div className="border-t border-white/5 pt-4 space-y-2">
+                          <label className="text-xs font-bold text-orange-400 uppercase">Manage Merchant UPI Accounts</label>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text"
+                              id="newUpiInput"
+                              placeholder="e.g. mobile@upi"
+                              className="flex-1 glass-input p-2 rounded-lg text-xs font-mono"
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                const val = document.getElementById("newUpiInput").value;
+                                if (val) {
+                                  const updatedUpiList = [...(shopConfig.upiIds || []), val];
+                                  setShopConfig({ ...shopConfig, upiIds: updatedUpiList, activeUpiId: val });
+                                  document.getElementById("newUpiInput").value = "";
+                                  triggerToast("UPI ID Added!", "success");
+                                }
+                              }}
+                              className="bg-orange-500 hover:bg-orange-600 text-white px-4 rounded-lg text-xs font-bold"
+                            >
+                              Add UPI
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {(shopConfig.upiIds || []).map(idVal => (
+                              <div key={idVal} className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1 rounded-lg text-[10px] font-mono">
+                                <span className={shopConfig.activeUpiId === idVal ? 'text-green-400 font-bold' : 'text-gray-400'}>{idVal}</span>
+                                <button 
+                                  type="button" 
+                                  onClick={async () => {
+                                    const proceed = await triggerCustomConfirm("Delete UPI ID?", `Remove ${idVal}?`);
+                                    if (proceed) {
+                                      const updated = (shopConfig.upiIds || []).filter(v => v !== idVal);
+                                      setShopConfig({ ...shopConfig, upiIds: updated, activeUpiId: updated[0] || "" });
+                                    }
+                                  }}
+                                  className="text-red-400 hover:text-red-300 ml-1"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={async () => {
+                            await syncChanges(null, null, shopConfig, null, null, null);
+                            triggerToast("Shop Configuration committed to local drive!", "success");
+                          }}
+                          disabled={!isSynced}
+                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 px-6 rounded-xl disabled:opacity-40"
+                        >
+                          Save Credentials & Configuration
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Right Settings (Custom Categories) */}
+                    <div className="lg:col-span-4 glass-panel p-6 rounded-3xl space-y-4">
+                      <h3 className="font-bold text-white text-sm border-b border-white/5 pb-2">Custom Categories</h3>
+                      
+                      <form onSubmit={handleAddCategory} className="flex gap-2">
+                        <input 
+                          type="text" required
+                          placeholder="Category name"
+                          value={newCategoryInput}
+                          onChange={(e) => setNewCategoryInput(e.target.value)}
+                          className="flex-1 glass-input px-3 py-1.5 rounded-xl text-xs"
+                        />
+                        <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold">Add</button>
+                      </form>
+
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto no-scrollbar pr-1">
+                        {(shopConfig.customCategories || []).map(cat => (
+                          <div key={cat} className="flex justify-between items-center bg-white/5 border border-white/5 p-2 rounded-xl text-xs">
+                            <span className="text-white font-bold">{cat}</span>
+                            <button onClick={() => handleDeleteCategory(cat)} className="text-red-400 hover:text-red-300">Delete</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+            </main>
+          </div>
+
+          {/* ==========================================
+              TOP-RIGHT TRANSACTIONS SUCCESS / CANCEL CORNER NOTIFICATION TOAST
+             ========================================== */}
+          {cornerAnimation && (
+            <div className="fixed top-20 right-6 z-50 max-w-sm w-full animate-scale-up">
+              <div className={`p-5 rounded-2xl shadow-2xl border ${cornerAnimation.type === 'Success' ? 'bg-green-500/10 border-green-500/20 text-green-300' : 'bg-red-500/10 border-red-500/20 text-red-300'} backdrop-blur-xl space-y-2`}>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black tracking-wider uppercase">{cornerAnimation.title}</h4>
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${cornerAnimation.type === 'Success' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                    {cornerAnimation.type === 'Success' ? 'APPROVED' : 'CANCELLED'}
+                  </span>
+                </div>
+                <p className="text-2xl font-black font-mono">{cornerAnimation.amount}</p>
+                <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                  <div className={`h-full ${cornerAnimation.type === 'Success' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} style={{width: '100%'}}></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ==========================================
+              INVENTORY MANAGEMENT: CREATE / EDIT DIALOG MODAL
+             ========================================== */}
+          {isProductModalOpen && editingProduct && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
+              <div className="max-w-xl w-full glass-panel p-6 rounded-3xl border border-white/15 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
+                
+                <div class="flex justify-between items-center pb-3 border-b border-white/10">
+                  <h3 className="font-extrabold text-white text-lg">
+                    {editingProduct.id ? "Edit Product Credentials" : "Add New Stock Item"}
+                  </h3>
+                  <button onClick={() => setIsProductModalOpen(false)} className="text-gray-400 hover:text-white">
+                    <Icon name="x" />
+                  </button>
+                </div>
+
+                <form onSubmit={saveProductDetails} className="space-y-4 mt-4 text-xs">
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-gray-300 font-bold block mb-1">Product Name *</label>
+                      <input 
+                        type="text" required
+                        value={editingProduct.name}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                        className="w-full glass-input p-2.5 rounded-xl text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-gray-300 font-bold block mb-1">Category *</label>
+                      <select 
+                        value={editingProduct.category}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                        className="w-full glass-input p-2.5 rounded-xl text-xs"
+                      >
+                        {shopConfig.customCategories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-gray-300 font-bold block mb-1">Base Measuring Unit *</label>
+                      <input 
+                        type="text" required
+                        value={editingProduct.baseUnit}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, baseUnit: e.target.value })}
+                        className="w-full glass-input p-2.5 rounded-xl text-xs"
+                        placeholder="e.g. kg, Liter, Piece"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-gray-300 font-bold block mb-1">Base Price Rate (₹) *</label>
+                      <input 
+                        type="number" step="any" required
+                        value={editingProduct.basePrice}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, basePrice: parseFloat(e.target.value) || 0 })}
+                        className="w-full glass-input p-2.5 rounded-xl text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-gray-300 font-bold block mb-1">Initial Stock Level *</label>
+                      <input 
+                        type="number" step="any" required
+                        value={editingProduct.stock}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseFloat(e.target.value) || 0 })}
+                        className="w-full glass-input p-2.5 rounded-xl text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-gray-300 font-bold block mb-1">Minimum Alert Level</label>
+                      <input 
+                        type="number" step="any"
+                        value={editingProduct.minStock}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, minStock: parseFloat(e.target.value) || 0 })}
+                        className="w-full glass-input p-2.5 rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-gray-300 font-bold block mb-1">Product Photo URL (Optional)</label>
+                    <input 
+                      type="text"
+                      value={editingProduct.imageUrl}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, imageUrl: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full glass-input p-2.5 rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <label className="font-bold text-white block">Fractional Subunit System</label>
+                        <p className="text-[9px] text-gray-400 mt-0.5">Allows conversions during POS terminal weighing checks.</p>
+                      </div>
+                      <input 
+                        type="checkbox"
+                        checked={editingProduct.hasSubUnit}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, hasSubUnit: e.target.checked })}
+                        className="w-4 h-4 rounded text-orange-500 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    {editingProduct.hasSubUnit && (
+                      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5 animate-scale-up">
+                        <div>
+                          <label className="text-[10px] text-gray-300 block mb-1">Sub-unit Name</label>
+                          <input 
+                            type="text"
+                            value={editingProduct.subUnitName}
+                            onChange={(e) => setEditingProduct({ ...editingProduct, subUnitName: e.target.value })}
+                            placeholder="e.g. gram, ml"
+                            className="w-full glass-input p-2 rounded-lg text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-gray-300 block mb-1">Conversion Factor</label>
+                          <input 
+                            type="number"
+                            value={editingProduct.subUnitFactor}
+                            onChange={(e) => setEditingProduct({ ...editingProduct, subUnitFactor: parseFloat(e.target.value) || 1 })}
+                            placeholder="e.g. 1000"
+                            className="w-full glass-input p-2 rounded-lg text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 justify-end pt-3 border-t border-white/5">
+                    <button type="button" onClick={() => setIsProductModalOpen(false)} className="px-4 py-2 bg-white/5 text-gray-300 rounded-xl font-bold">Cancel</button>
+                    <button type="submit" className="px-5 py-2 bg-orange-500 text-white rounded-xl font-bold">Save Details</button>
+                  </div>
+
+                </form>
+
+              </div>
+            </div>
+          )}
+
+          {/* ==========================================
+              INVOICE PREVIEW & ACTIONS MODAL
+             ========================================== */}
+          {activeReceipt && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 overflow-y-auto">
+              <div className="max-w-2xl w-full bg-white text-black rounded-3xl shadow-2xl relative flex flex-col my-8 animate-scale-up">
+                
+                {/* Printable Frame Area */}
+                <div id="print-area" className="p-8 space-y-6 flex-1 relative">
+                  
+                  {/* Status Stamped Watermarks if Cancelled */}
+                  {activeReceipt.status === "Cancelled" && (
+                    <div className="watermark-rejected">REJECTED</div>
+                  )}
+
+                  {/* Header metadata */}
+                  <div className="flex justify-between items-start pb-6 border-b border-gray-200">
+                    <div>
+                      {shopConfig.logo ? (
+                        <img src={shopConfig.logo} alt="Logo" className="w-16 h-16 rounded-full object-cover mb-2 border border-gray-200" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full bg-orange-500 text-white flex items-center justify-center font-extrabold text-2xl mb-2">
+                          {shopConfig.name ? shopConfig.name.charAt(0).toUpperCase() : "O"}
+                        </div>
+                      )}
+                      <h2 className="text-2xl font-black tracking-tight text-orange-500">{shopConfig.name}</h2>
+                      <p className="text-xs text-gray-500 font-medium italic">{shopConfig.tagline}</p>
+                    </div>
+                    <div className="text-right">
+                      <h3 className="text-3xl font-black text-gray-300 tracking-wider">INVOICE BILL</h3>
+                      {shopConfig.gstin && <p className="text-[10px] text-gray-500 font-bold">GSTIN: {shopConfig.gstin}</p>}
+                      <p className="text-[10px] text-gray-500 font-mono">VPA Address: {shopConfig.activeUpiId}</p>
+                    </div>
+                  </div>
+
+                  {/* Metadata coordinates */}
+                  <div className="grid grid-cols-2 gap-4 text-xs pt-4">
+                    <div>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">BILLED TO:</p>
+                      <p className="font-black text-black text-sm mt-1">{activeReceipt.customerName}</p>
+                      <p className="text-gray-500">Phone: {activeReceipt.customerPhone}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">BILL METADATA:</p>
+                      <p className="font-mono text-black font-bold mt-1">Bill No: {activeReceipt.id}</p>
+                      <p className="text-gray-500">Date: {activeReceipt.date}</p>
+                      <p className="text-gray-500">Payment Mode: {activeReceipt.paymentMode}</p>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Items Table */}
+                  <table className="w-full text-left text-xs border-collapse mt-6">
+                    <thead>
+                      <tr className="border-b-2 border-dashed border-gray-300 text-gray-500 font-bold uppercase">
+                        <th className="py-2">Item Details</th>
+                        <th className="py-2">Checkout Rate</th>
+                        <th className="py-2">Billed Quantity</th>
+                        <th className="py-2 text-right">Sum Net Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 font-semibold">
+                      {(activeReceipt.items || []).map((it, idx) => (
+                        <tr key={idx}>
+                          <td className="py-3 font-bold text-black">{it.name}</td>
+                          <td className="py-3 text-gray-500 font-mono">{it.rate}</td>
+                          <td className="py-3 text-gray-800 font-mono">{it.quantity} {it.unit}</td>
+                          <td className="py-3 text-right font-bold text-black font-mono">₹{(it.price || 0).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Calculations summary column */}
+                  <div className="border-t-2 border-dashed border-gray-300 pt-4 space-y-2 text-xs">
+                    <div className="flex justify-between text-gray-500 font-mono">
+                      <span>SGST (2.5%):</span>
+                      <span>₹{((activeReceipt.taxAmount || 0) / 2).toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-500 font-mono">
+                      <span>CGST (2.5%):</span>
+                      <span>₹{((activeReceipt.taxAmount || 0) / 2).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-200 text-sm font-black text-black">
+                      <span>Grand Net Total:</span>
+                      <span className="text-xl font-black text-orange-500 font-mono">₹{(activeReceipt.totalAmount || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Dynamic UPI Payment QR rendering (UPI QR only printed if active UPI payment exists) */}
+                  {activeReceipt.paymentMode === "UPI" && activeReceipt.status === "Success" && (
+                    <div className="pt-6 flex flex-col items-center justify-center border-t border-dashed border-gray-200 gap-2">
+                      <div className="p-2 border-2 border-dashed border-gray-300 rounded-2xl bg-white">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=${shopConfig.activeUpiId}&pn=${encodeURIComponent(shopConfig.name)}&am=${activeReceipt.totalAmount}&cu=INR`} 
+                          alt="Payment QR" 
+                          className="w-28 h-28"
+                        />
+                      </div>
+                      <p className="text-[9px] text-gray-500 uppercase font-extrabold tracking-wider font-mono">Scan QR code using GPay, PhonePe, Paytm or BHIM UPI</p>
+                    </div>
+                  )}
+
+                  <div className="text-center pt-6 border-t border-gray-200 text-[10px] text-gray-400 uppercase font-bold">
+                    <p className="text-black">Thank you for shopping with us!</p>
+                    <p className="mt-1 font-light font-mono italic">Terms: All sales details are printed securely using local systems.</p>
+                  </div>
+
+                </div>
+
+                {/* STICKY MODAL PRINT OPTIONS HUB - RELOCATED TO BOTTOM */}
+                <div className="no-print p-4 bg-zinc-950 text-white rounded-b-3xl border-t border-white/10 flex flex-wrap gap-2 justify-between items-center">
+                  
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setReceiptLayout("A4")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold ${receiptLayout === 'A4' ? 'bg-orange-500 text-white' : 'bg-white/10 text-gray-300'}`}
+                    >
+                      A4 Layout
+                    </button>
+                    <button 
+                      onClick={() => setReceiptLayout("Thermal")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold ${receiptLayout === 'Thermal' ? 'bg-orange-500 text-white' : 'bg-white/10 text-gray-300'}`}
+                    >
+                      3" Thermal Layout
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        const messageText = `*${shopConfig.name} - INVOICE BILL*%0A` +
+                          `Invoice: ${activeReceipt.id}%0A` +
+                          `Date: ${activeReceipt.date}%0A` +
+                          `Customer: ${activeReceipt.customerName}%0A` +
+                          `*Total: ₹${(activeReceipt.totalAmount || 0).toFixed(2)}*%0A` +
+                          `Thank you for patronizing us!`;
+                        window.open(`https://api.whatsapp.com/send?text=${messageText}`, '_blank');
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-xl text-xs font-bold"
+                    >
+                      Send via WhatsApp
+                    </button>
+                    
+                    <button 
+                      onClick={() => window.print()}
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1"
+                    >
+                      <Icon name="printer" className="w-4 h-4" />
+                      Print Bill
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveReceipt(null)}
+                      className="bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 rounded-xl text-xs font-bold"
+                    >
+                      Close Window
+                    </button>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* ==========================================
+              CENTRALIZED CUSTOM GLASS DIALOG PORTAL (REPLACES CHROME POPUPS)
+             ========================================== */}
+          {customDialog && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-6">
+              <div className="max-w-md w-full glass-panel-orange p-6 rounded-3xl border border-orange-500/30 shadow-2xl space-y-4 animate-scale-up">
+                
+                <div>
+                  <h4 className="text-sm font-black text-orange-400 uppercase tracking-wider">{customDialog.title}</h4>
+                  <p className="text-xs text-white mt-2 leading-relaxed">{customDialog.message}</p>
+                </div>
+
+                {/* Prompt value field if dialog is prompt/password */}
+                {(customDialog.type === 'prompt' || customDialog.type === 'password') && (
+                  <div>
+                    <input 
+                      type={customDialog.type === 'password' ? 'password' : 'text'}
+                      id="dialogValueInput"
+                      placeholder={customDialog.placeholder || "Enter value..."}
+                      defaultValue={customDialog.defaultValue || ""}
+                      className="w-full glass-input px-3 py-2 rounded-xl text-xs font-mono font-bold"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          customDialog.onResolve(document.getElementById("dialogValueInput").value);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
+                  {customDialog.type !== 'alert' && (
+                    <button 
+                      onClick={() => customDialog.onReject()}
+                      className="px-4 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-gray-300 hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => {
+                      if (customDialog.type === 'prompt' || customDialog.type === 'password') {
+                        customDialog.onResolve(document.getElementById("dialogValueInput").value);
+                      } else {
+                        customDialog.onResolve();
+                      }
+                    }}
+                    className="px-5 py-1.5 rounded-lg text-xs font-bold bg-orange-500 text-white hover:bg-orange-600"
+                  >
+                    Confirm
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* ==========================================
+              SYSTEM DYNAMIC NOTIFICATION IN-APP TOAST
+             ========================================== */}
+          {toast && (
+            <div className="fixed bottom-6 right-6 z-50 animate-scale-up">
+              <div className={`px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-2xl border ${
+                toast.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-300' :
+                toast.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' :
+                'bg-red-500/10 border-red-500/20 text-red-300'
+              } backdrop-blur-md`}>
+                <Icon name={toast.type === 'success' ? 'check' : 'info'} />
+                <span className="text-xs font-bold font-sans">{toast.message}</span>
+              </div>
+            </div>
+          )}
+
+          {showPermissionPrompt && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xl flex items-center justify-center p-6">
+              <div className="max-w-md w-full glass-panel border border-orange-500/30 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center gap-6 animate-scale-up">
+                <div className="w-20 h-20 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-400 border border-orange-500/30">
+                  <Icon name="shield" className="w-10 h-10 animate-bounce" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Local File Access Permission</h3>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    OrangeGlass POS requires permission to access your local data folder to restore previous registers and log sales.
+                  </p>
+                </div>
+                <div className="flex gap-3 w-full">
+                  <button onClick={disconnectFolder} className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 text-xs py-3 rounded-xl border border-white/10 font-bold">Disconnect</button>
+                  <button onClick={() => loadDataFromFolder(dirHandle)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-xs py-3 rounded-xl font-bold shadow-lg">Grant Authorization</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    // Render Portal
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
