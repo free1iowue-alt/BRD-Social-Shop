@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Hubs - Mount Database</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --text: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 500px;
+            width: 90%;
+            transition: transform 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #a5b4fc, #6366f1);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(99, 102, 241, 0.5);
+            padding: 2.5rem;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(99, 102, 241, 0.02);
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Loading Screen overlay */
+        .loader-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .loader-wrapper.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            margin-top: 1.5rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="mainCard">
+        <h1>UNITY HUBS</h1>
+        <p>Initialize or mount your local data ecosystem</p>
+        
+        <div class="drop-zone" id="dropZone">
+            <span class="icon">📁</span>
+            <h3>Drag & Drop Folder</h3>
+            <p style="font-size: 0.9rem; margin-bottom: 1rem;">or click to browse your system</p>
+            <button class="btn">Select Folder</button>
+        </div>
+    </div>
+
+    <div class="loader-wrapper" id="loader">
+        <div class="spinner"></div>
+        <div class="loader-text" id="loaderText">Mounting File System...</div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const loader = document.getElementById('loader');
+        const loaderText = document.getElementById('loaderText');
+
+        // Handle standard folder picker click
+        dropZone.addEventListener('click', async (e) => {
+            // Prevent trigger loops if clicking the internal button
+            if(e.target.tagName === 'BUTTON') return; 
+            await triggerFolderPicker();
+        });
+
+        dropZone.querySelector('button').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await triggerFolderPicker();
+        });
+
+        // Drag & Drop handlers
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            // Accessing dropped items
+            const items = e.dataTransfer.items;
+            if (items && items[0]) {
+                const item = items[0].getAsFileSystemHandle();
+                if (item.kind === 'directory') {
+                    handleDirectoryHandle(item);
+                } else {
+                    alert("Please drop a FOLDER, not a file.");
+                }
+            }
+        });
+
+        async function triggerFolderPicker() {
+            try {
+                // Feature detection
+                if ('showDirectoryPicker' in window) {
+                    const dirHandle = await window.showDirectoryPicker({
+                        mode: 'readwrite'
+                    });
+                    handleDirectoryHandle(dirHandle);
+                } else {
+                    alert("Your browser doesn't support the File System Access API. Please use Chrome, Edge, or Opera.");
+                }
+            } catch (err) {
+                console.log("User cancelled the picker or access denied.", err);
+            }
+        }
+
+        async function handleDirectoryHandle(handle) {
+            // Store reference temporarily in IndexedDB/Session Storage if needed, 
+            // but for simple redirection we simulate reading structure here:
+            showLoader();
+            
+            // Simulating parsing files/loading heavy structure
+            setTimeout(() => {
+                loaderText.innerText = "Indexing Hub Resources...";
+                setTimeout(() => {
+                    // Redirect to home page
+                    window.location.href = 'home.html';
+                }, 1200);
+            }, 1000);
+        }
+
+        function showLoader() {
+            loader.classList.add('active');
+        }
+    </script>
+</body>
+</html>5
